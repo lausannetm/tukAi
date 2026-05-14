@@ -90,6 +90,12 @@ export async function POST(request: Request): Promise<NextResponse> {
         { status: 400 }
       );
     }
+    if (code === "23514") {
+      return NextResponse.json(
+        { error: "You cannot purchase your own service listing." },
+        { status: 400 }
+      );
+    }
     const message =
       err instanceof Error ? err.message : "Failed to create order";
     return NextResponse.json({ error: message }, { status: 500 });

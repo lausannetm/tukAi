@@ -33,20 +33,38 @@ export function OrderForm(props: {
     }
   }, []);
 
+  const purchasableServices = useMemo(() => {
+    const uid = userId.trim().toLowerCase();
+    if (!uid) {
+      return props.services;
+    }
+    return props.services.filter(
+      (s) => s.provider_id.toLowerCase() !== uid
+    );
+  }, [props.services, userId]);
+
   const options: ServiceOption[] = useMemo(
     () =>
-      props.services.map((service) => ({
-        label: `${service.name} — ${(service.price_cents / 100).toFixed(2)} €`,
+      purchasableServices.map((service) => ({
+        label: `${service.name} — ${(service.price_cents / 100).toFixed(2)} € (${service.provider_label})`,
         value: service.id,
       })),
-    [props.services]
+    [purchasableServices]
   );
 
   useEffect(() => {
-    if (serviceId === null && props.services[0]) {
-      setServiceId(props.services[0].id);
+    if (purchasableServices.length === 0) {
+      setServiceId(null);
+      return;
     }
-  }, [props.services, serviceId]);
+    if (serviceId === null) {
+      setServiceId(purchasableServices[0].id);
+      return;
+    }
+    if (!purchasableServices.some((s) => s.id === serviceId)) {
+      setServiceId(purchasableServices[0].id);
+    }
+  }, [purchasableServices, serviceId]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
@@ -88,8 +106,8 @@ export function OrderForm(props: {
         </FloatLabel>
         <small className="text-color-secondary block mt-2">
           {usingStoredUser
-            ? "Using your logged-in account ID. You can override the UUID if needed."
-            : "Seeded demo user from the database script."}
+            ? "Using your logged-in account ID. You can override the UUID if needed. Your own listings are hidden from the service list."
+            : "Seeded demo user from the database script. Your own listings are hidden from the service list."}
         </small>
       </div>
 
