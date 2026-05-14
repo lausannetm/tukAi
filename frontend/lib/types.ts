@@ -1,7 +1,8 @@
 export type ServiceDTO = {
   id: string;
-  provider_id: string;
-  provider_label: string;
+  /** Listing owner; may be absent on older API payloads. */
+  provider_id?: string;
+  provider_label?: string;
   name: string;
   description: string | null;
   price_cents: number;

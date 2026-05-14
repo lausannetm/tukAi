@@ -27,6 +27,10 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-app}@db:5432/${POSTGRES_DB:-app}
       NODE_ENV: production
       FRONTEND_PUBLIC_URL: ${FRONTEND_PUBLIC_URL:-http://localhost:3000}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production-use-a-long-random-string}
+      SMTP_HOST: ${SMTP_HOST:-mailhog}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_FROM: ${SMTP_FROM:-noreply@localhost}
       # Set in .env (see .env.example). Required for POST /services/suggest (AI hero search).
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       # Set to 1 for a zero-OpenAI-cost demo (local heuristic instead of ChatGPT).
@@ -36,6 +40,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      mailhog:
+        condition: service_started
+
+  # Local SMTP sink + web UI: http://localhost:8025 (configure your app to send via mailhog:1025).
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    restart: unless-stopped
+    ports:
+      - "${MAILHOG_UI_PORT:-8025}:8025"
+      - "${MAILHOG_SMTP_PORT:-1025}:1025"
 
   frontend:
     build:
@@ -46,6 +60,7 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
+      # Server-side proxy `app/backend/[...path]/route.ts` forwards /backend/* to the API.
       BACKEND_INTERNAL_URL: http://backend:3000
     ports:
       - "${FRONTEND_PORT:-3000}:3000"

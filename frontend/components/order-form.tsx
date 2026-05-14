@@ -7,6 +7,7 @@ import { FloatLabel } from "primereact/floatlabel";
 import { InputNumber } from "primereact/inputnumber";
 import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
+import { readStoredUser } from "@/lib/auth-storage";
 import type { SubmitOrderFn } from "@/lib/submit-order-fn";
 import type { ServiceDTO } from "@/lib/types";
 
@@ -22,23 +23,40 @@ export function OrderForm(props: {
   const [userId, setUserId] = useState(props.demoUserId);
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState<number>(1);
+  const [usingStoredUser, setUsingStoredUser] = useState(false);
+
+  useEffect(() => {
+    const stored = readStoredUser();
+    if (stored) {
+      setUserId(stored.id);
+      setUsingStoredUser(true);
+    }
+  }, []);
 
   const purchasableServices = useMemo(() => {
     const uid = userId.trim().toLowerCase();
     if (!uid) {
       return props.services;
     }
-    return props.services.filter(
-      (s) => s.provider_id.toLowerCase() !== uid
-    );
+    return props.services.filter((s) => {
+      const pid = s.provider_id?.trim().toLowerCase();
+      if (!pid) {
+        return true;
+      }
+      return pid !== uid;
+    });
   }, [props.services, userId]);
 
   const options: ServiceOption[] = useMemo(
     () =>
-      purchasableServices.map((service) => ({
-        label: `${service.name} — ${(service.price_cents / 100).toFixed(2)} € (${service.provider_label})`,
-        value: service.id,
-      })),
+      purchasableServices.map((service) => {
+        const seller =
+          service.provider_label?.trim() || service.provider_id || "Seller";
+        return {
+          label: `${service.name} — ${(service.price_cents / 100).toFixed(2)} € (${seller})`,
+          value: service.id,
+        };
+      }),
     [purchasableServices]
   );
 
@@ -95,8 +113,9 @@ export function OrderForm(props: {
           <label htmlFor="userId">User ID (UUID)</label>
         </FloatLabel>
         <small className="text-color-secondary block mt-2">
-          Seeded demo user from the database script. Your own listings are hidden
-          from the service list.
+          {usingStoredUser
+            ? "Using your logged-in account ID. You can override the UUID if needed. Your own listings are hidden from the service list."
+            : "Seeded demo user from the database script. Your own listings are hidden from the service list."}
         </small>
       </div>
 

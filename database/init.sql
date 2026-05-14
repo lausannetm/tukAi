@@ -10,8 +10,15 @@ CREATE TABLE users (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email           TEXT NOT NULL UNIQUE,
     full_name       TEXT,
+    password_hash   TEXT,
+    email_verified_at               TIMESTAMPTZ,
+    email_confirmation_token_hash TEXT,
+    email_confirmation_expires_at TIMESTAMPTZ,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE INDEX idx_users_email_confirmation_hash ON users (email_confirmation_token_hash)
+    WHERE email_confirmation_token_hash IS NOT NULL;
 
 CREATE TABLE services (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),

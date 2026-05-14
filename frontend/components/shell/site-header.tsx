@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { clearAuthSession, readStoredUser } from "@/lib/auth-storage";
+import type { UserPublicDTO } from "@/lib/auth-types";
 
 type NavItem = { href: string; label: string };
 
@@ -21,11 +23,24 @@ function isActivePath(pathname: string, href: string): boolean {
 
 export function SiteHeader(): JSX.Element {
   const pathname = usePathname();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [storedUser, setStoredUser] = useState<UserPublicDTO | null>(null);
+
+  useEffect(() => {
+    setStoredUser(readStoredUser());
+  }, [pathname]);
 
   const closeMenu = useCallback((): void => {
     setMenuOpen(false);
   }, []);
+
+  const handleLogout = useCallback((): void => {
+    clearAuthSession();
+    setStoredUser(null);
+    closeMenu();
+    router.push("/");
+  }, [closeMenu, router]);
 
   useEffect(() => {
     closeMenu();
@@ -64,7 +79,7 @@ export function SiteHeader(): JSX.Element {
         </Link>
 
         <nav
-          className="hidden sm:flex align-items-center gap-1"
+          className="hidden sm:flex align-items-center gap-1 flex-wrap justify-content-end"
           aria-label="Main"
         >
           {NAV_ITEMS.map((item) => {
@@ -83,6 +98,46 @@ export function SiteHeader(): JSX.Element {
               </Link>
             );
           })}
+          {storedUser ? (
+            <>
+              <span
+                className="px-2 text-sm text-color-secondary max-w-12rem white-space-nowrap overflow-hidden text-overflow-ellipsis"
+                title={storedUser.email}
+              >
+                {storedUser.email}
+              </span>
+              <button
+                type="button"
+                className="px-3 py-2 border-round text-sm font-medium border-none surface-ground cursor-pointer text-color hover:surface-hover"
+                onClick={handleLogout}
+              >
+                Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className={`px-3 py-2 border-round no-underline text-sm font-medium transition-colors transition-duration-150 ${
+                  isActivePath(pathname, "/login")
+                    ? "bg-primary text-primary-contrast"
+                    : "text-color hover:surface-hover"
+                }`}
+              >
+                Log in
+              </Link>
+              <Link
+                href="/register"
+                className={`px-3 py-2 border-round no-underline text-sm font-medium transition-colors transition-duration-150 ${
+                  isActivePath(pathname, "/register")
+                    ? "bg-primary text-primary-contrast"
+                    : "text-color hover:surface-hover"
+                }`}
+              >
+                Register
+              </Link>
+            </>
+          )}
         </nav>
 
         <button
@@ -123,6 +178,45 @@ export function SiteHeader(): JSX.Element {
                 </Link>
               );
             })}
+            {storedUser ? (
+              <>
+                <span className="px-3 py-2 text-sm text-color-secondary">
+                  {storedUser.email}
+                </span>
+                <button
+                  type="button"
+                  className="px-3 py-3 border-round text-left font-medium border-none surface-ground cursor-pointer text-color hover:surface-hover"
+                  onClick={handleLogout}
+                >
+                  Log out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className={`px-3 py-3 border-round no-underline font-medium ${
+                    isActivePath(pathname, "/login")
+                      ? "bg-primary text-primary-contrast"
+                      : "text-color hover:surface-hover"
+                  }`}
+                  onClick={closeMenu}
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/register"
+                  className={`px-3 py-3 border-round no-underline font-medium ${
+                    isActivePath(pathname, "/register")
+                      ? "bg-primary text-primary-contrast"
+                      : "text-color hover:surface-hover"
+                  }`}
+                  onClick={closeMenu}
+                >
+                  Register
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       ) : null}
