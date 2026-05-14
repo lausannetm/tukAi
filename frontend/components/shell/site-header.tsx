@@ -39,7 +39,7 @@ export function SiteHeader(): JSX.Element {
     clearAuthSession();
     setStoredUser(null);
     closeMenu();
-    router.refresh();
+    router.push("/");
   }, [closeMenu, router]);
 
   useEffect(() => {

@@ -27,17 +27,21 @@ export async function POST(request: Request): Promise<NextResponse> {
       return NextResponse.json({ error: GENERIC_LOGIN_ERROR }, { status: 401 });
     }
 
+    if (!row.email_verified_at) {
+      return NextResponse.json(
+        {
+          error:
+            "Please confirm your email before logging in. If you just registered, use the link we sent you (in local dev, check MailHog).",
+        },
+        { status: 403 }
+      );
+    }
+
     const token = await signAccessToken(row.id);
-    const user = {
-      id: row.id,
-      email: row.email,
-      full_name: row.full_name,
-      created_at: row.created_at,
-    };
 
     return NextResponse.json({
       token,
-      user: mapUserPublicToJson(user),
+      user: mapUserPublicToJson(row),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to log in";

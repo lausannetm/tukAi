@@ -9,7 +9,6 @@ import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
 import { Password } from "primereact/password";
 import { postRegister } from "@/lib/auth-api";
-import { writeAuthSession } from "@/lib/auth-storage";
 
 type RegisterNotice = { severity: "success" | "warn"; text: string };
 
@@ -48,25 +47,24 @@ export function RegisterForm(): JSX.Element {
           setError(result.error);
           return;
         }
-        writeAuthSession(result.data.token, result.data.user);
         if (result.data.confirmationEmailSent) {
           setNotice({
             severity: "success",
-            text: "We sent a confirmation email. In local Docker, open MailHog at http://localhost:8025 and click the link in the message.",
+            text: "We sent a confirmation email. Open MailHog at http://localhost:8025, click the link in the message, then you can log in. You are not signed in yet.",
           });
           redirectTimerRef.current = window.setTimeout(() => {
             redirectTimerRef.current = null;
-            router.push("/");
+            router.push("/login");
           }, 4000);
           return;
         }
         setNotice({
           severity: "warn",
-          text: "Account created, but the confirmation email could not be sent. Start MailHog (`docker compose up -d mailhog`) or set SMTP_HOST=127.0.0.1 and SMTP_PORT=1025, then register again if you need the message.",
+          text: "Account created, but the confirmation email could not be sent. Start MailHog (`docker compose up -d mailhog`) or set SMTP_HOST=127.0.0.1 and SMTP_PORT=1025. You can log in only after you confirm your email.",
         });
         redirectTimerRef.current = window.setTimeout(() => {
           redirectTimerRef.current = null;
-          router.push("/");
+          router.push("/login");
         }, 5000);
       } finally {
         setSubmitting(false);

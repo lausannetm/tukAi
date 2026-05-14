@@ -6,6 +6,7 @@ export type UserPublicRow = {
   email: string;
   full_name: string | null;
   created_at: Date;
+  email_verified_at: Date | null;
 };
 
 export type UserWithSecretRow = UserPublicRow & {
@@ -20,7 +21,7 @@ export async function insertRegisteredUser(params: {
   const rows = await query<UserPublicRow>(
     `INSERT INTO users (email, full_name, password_hash)
      VALUES ($1, $2, $3)
-     RETURNING id, email, full_name, created_at`,
+     RETURNING id, email, full_name, created_at, email_verified_at`,
     [params.email, params.fullName, params.passwordHash]
   );
   const row = rows[0];
@@ -67,7 +68,7 @@ export async function findUserWithSecretByEmail(
   email: string
 ): Promise<UserWithSecretRow | null> {
   const rows = await query<UserWithSecretRow>(
-    `SELECT id, email, full_name, password_hash, created_at
+    `SELECT id, email, full_name, password_hash, created_at, email_verified_at
      FROM users
      WHERE email = $1
      LIMIT 1`,
@@ -80,7 +81,7 @@ export async function findUserPublicById(
   id: string
 ): Promise<UserPublicRow | null> {
   const rows = await query<UserPublicRow>(
-    `SELECT id, email, full_name, created_at
+    `SELECT id, email, full_name, created_at, email_verified_at
      FROM users
      WHERE id = $1::uuid
      LIMIT 1`,

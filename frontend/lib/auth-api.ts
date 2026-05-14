@@ -1,4 +1,10 @@
-import type { AuthMeResponse, AuthTokenResponse } from "@/lib/auth-types";
+import type {
+  AuthMeResponse,
+  AuthTokenResponse,
+  ConfirmEmailApiResponse,
+  RegisterResponse,
+  UserPublicDTO,
+} from "@/lib/auth-types";
 import { backendPublicOrigin } from "@/lib/public-backend";
 
 /**
@@ -33,7 +39,7 @@ export async function postRegister(payload: {
   email: string;
   password: string;
   fullName?: string;
-}): Promise<{ ok: true; data: AuthTokenResponse } | { ok: false; error: string }> {
+}): Promise<{ ok: true; data: RegisterResponse } | { ok: false; error: string }> {
   const response = await fetch(`${authApiBase()}/auth/register`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -50,12 +56,12 @@ export async function postRegister(payload: {
       error: errorMessage(body, `Registration failed (${response.status})`),
     };
   }
-  const rawData = body as AuthTokenResponse;
-  const data: AuthTokenResponse = {
-    ...rawData,
+  const raw = body as Partial<RegisterResponse>;
+  const data: RegisterResponse = {
+    user: raw.user as UserPublicDTO,
     confirmationEmailSent:
-      typeof rawData.confirmationEmailSent === "boolean"
-        ? rawData.confirmationEmailSent
+      typeof raw.confirmationEmailSent === "boolean"
+        ? raw.confirmationEmailSent
         : false,
   };
   return { ok: true, data };
@@ -100,16 +106,17 @@ export async function fetchAuthMe(token: string): Promise<
   return { ok: true, data: body as AuthMeResponse };
 }
 
-export type ConfirmEmailResponse = { ok: true; email: string };
-
-export async function getConfirmEmail(token: string): Promise<
-  | { ok: true; data: ConfirmEmailResponse }
+export async function getConfirmEmail(
+  token: string,
+  signal?: AbortSignal
+): Promise<
+  | { ok: true; data: ConfirmEmailApiResponse }
   | { ok: false; error: string }
 > {
   const q = new URLSearchParams({ token });
   const response = await fetch(
     `${authApiBase()}/auth/confirm-email?${q.toString()}`,
-    { method: "GET" }
+    { method: "GET", signal }
   );
   const body = await parseJson(response);
   if (!response.ok) {
@@ -121,5 +128,5 @@ export async function getConfirmEmail(token: string): Promise<
       ),
     };
   }
-  return { ok: true, data: body as ConfirmEmailResponse };
+  return { ok: true, data: body as ConfirmEmailApiResponse };
 }

@@ -172,7 +172,7 @@ export const openApiDocument: Record<string, unknown> = {
     "/auth/register": {
       post: {
         operationId: "registerUser",
-        summary: "Create an account (returns JWT)",
+        summary: "Create an account (no JWT until email is confirmed)",
         tags: ["Auth"],
         requestBody: {
           required: true,
@@ -187,7 +187,7 @@ export const openApiDocument: Record<string, unknown> = {
             description: "User created",
             content: {
               "application/json": {
-                schema: { $ref: "#/components/schemas/AuthTokenResponse" },
+                schema: { $ref: "#/components/schemas/RegisterResponse" },
               },
             },
           },
@@ -201,14 +201,6 @@ export const openApiDocument: Record<string, unknown> = {
           },
           "409": {
             description: "Email already registered",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/ApiError" },
-              },
-            },
-          },
-          "503": {
-            description: "JWT_SECRET not configured",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/ApiError" },
@@ -258,6 +250,14 @@ export const openApiDocument: Record<string, unknown> = {
           },
           "401": {
             description: "Invalid credentials",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+          "403": {
+            description: "Email not yet confirmed",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/ApiError" },
@@ -314,6 +314,14 @@ export const openApiDocument: Record<string, unknown> = {
               },
             },
           },
+          "403": {
+            description: "Email not confirmed for this account",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
           "503": {
             description: "JWT_SECRET not configured",
             content: {
@@ -357,6 +365,22 @@ export const openApiDocument: Record<string, unknown> = {
           },
           "400": {
             description: "Missing or invalid token",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+          "404": {
+            description: "User missing after confirm",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+          "503": {
+            description: "JWT_SECRET not configured",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/ApiError" },
@@ -530,18 +554,27 @@ export const openApiDocument: Record<string, unknown> = {
         properties: {
           token: { type: "string" },
           user: { $ref: "#/components/schemas/UserPublic" },
+        },
+      },
+      RegisterResponse: {
+        type: "object",
+        required: ["user", "confirmationEmailSent"],
+        properties: {
+          user: { $ref: "#/components/schemas/UserPublic" },
           confirmationEmailSent: {
             type: "boolean",
-            description: "True if the confirmation email was handed off to SMTP (e.g. MailHog)",
+            description: "True if SMTP accepted the confirmation email (e.g. MailHog)",
           },
         },
       },
       ConfirmEmailResponse: {
         type: "object",
-        required: ["ok", "email"],
+        required: ["ok", "email", "token", "user"],
         properties: {
-          ok: { type: "boolean", const: true },
+          ok: { type: "boolean" },
           email: { type: "string" },
+          token: { type: "string" },
+          user: { $ref: "#/components/schemas/UserPublic" },
         },
       },
       MeResponse: {

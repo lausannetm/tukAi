@@ -35,6 +35,16 @@ export async function GET(request: Request): Promise<NextResponse> {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    if (!user.email_verified_at) {
+      return NextResponse.json(
+        {
+          error:
+            "Please confirm your email before using this session. Log in again after confirming.",
+        },
+        { status: 403 }
+      );
+    }
+
     const ownedRows = await queryOwnedServicesForUser(userId);
     const services = ownedRows.map((row) => mapOwnedServiceToJson(row));
 

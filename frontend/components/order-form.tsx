@@ -38,17 +38,25 @@ export function OrderForm(props: {
     if (!uid) {
       return props.services;
     }
-    return props.services.filter(
-      (s) => s.provider_id.toLowerCase() !== uid
-    );
+    return props.services.filter((s) => {
+      const pid = s.provider_id?.trim().toLowerCase();
+      if (!pid) {
+        return true;
+      }
+      return pid !== uid;
+    });
   }, [props.services, userId]);
 
   const options: ServiceOption[] = useMemo(
     () =>
-      purchasableServices.map((service) => ({
-        label: `${service.name} — ${(service.price_cents / 100).toFixed(2)} € (${service.provider_label})`,
-        value: service.id,
-      })),
+      purchasableServices.map((service) => {
+        const seller =
+          service.provider_label?.trim() || service.provider_id || "Seller";
+        return {
+          label: `${service.name} — ${(service.price_cents / 100).toFixed(2)} € (${seller})`,
+          value: service.id,
+        };
+      }),
     [purchasableServices]
   );
 

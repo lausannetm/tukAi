@@ -1,39 +1,81 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "primereact/button";
 import { Message } from "primereact/message";
 import { getConfirmEmail } from "@/lib/auth-api";
+import { writeAuthSession } from "@/lib/auth-storage";
+
+function readConfirmTokenFromUrl(): string {
+  if (typeof window === "undefined") {
+    return "";
+  }
+  return (
+    new URLSearchParams(window.location.search).get("token")?.trim() ?? ""
+  );
+}
 
 export function ConfirmEmailClient(): JSX.Element {
-  const searchParams = useSearchParams();
-  const token = searchParams.get("token")?.trim() ?? "";
+  const router = useRouter();
   const [status, setStatus] = useState<"idle" | "loading" | "ok" | "err">(
     "idle"
   );
   const [message, setMessage] = useState<string>("");
 
   useEffect(() => {
+    const token = readConfirmTokenFromUrl();
     if (!token) {
       setStatus("err");
       setMessage("Missing token in the link. Use the link from your email.");
       return;
     }
 
+    const ac = new AbortController();
+    let cancelled = false;
+
     setStatus("loading");
     void (async (): Promise<void> => {
-      const result = await getConfirmEmail(token);
-      if (!result.ok) {
+      try {
+        const result = await getConfirmEmail(token, ac.signal);
+        if (cancelled) {
+          return;
+        }
+        if (!result.ok) {
+          setStatus("err");
+          setMessage(result.error);
+          return;
+        }
+        writeAuthSession(result.data.token, result.data.user);
+        setStatus("ok");
+        setMessage(
+          `Your email ${result.data.email} is confirmed. You are signed in — redirecting home…`
+        );
+        window.setTimeout(() => {
+          if (!cancelled) {
+            router.push("/");
+          }
+        }, 1200);
+      } catch (err) {
+        if (
+          cancelled ||
+          (err instanceof DOMException && err.name === "AbortError")
+        ) {
+          return;
+        }
         setStatus("err");
-        setMessage(result.error);
-        return;
+        setMessage(
+          err instanceof Error ? err.message : "Could not confirm email"
+        );
       }
-      setStatus("ok");
-      setMessage(`Your email ${result.data.email} is confirmed.`);
     })();
-  }, [token]);
+
+    return (): void => {
+      cancelled = true;
+      ac.abort();
+    };
+  }, [router]);
 
   return (
     <div className="surface-card border-round-xl shadow-2 p-4 sm:p-5 max-w-md mx-auto w-full">
@@ -41,7 +83,7 @@ export function ConfirmEmailClient(): JSX.Element {
         Email confirmation
       </h1>
 
-      {status === "loading" ? (
+      {status === "idle" || status === "loading" ? (
         <p className="text-color-secondary m-0">Confirming…</p>
       ) : null}
 

@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { signAccessToken } from "@/lib/auth-jwt";
 import { hashPassword } from "@/lib/auth-password";
 import {
   insertRegisteredUser,
@@ -29,7 +28,6 @@ export async function POST(request: Request): Promise<NextResponse> {
       passwordHash,
       fullName: parsed.fullName,
     });
-    const token = await signAccessToken(user.id);
 
     const plainToken = generateEmailConfirmationToken();
     const tokenHash = hashEmailConfirmationToken(plainToken);
@@ -56,7 +54,6 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     return NextResponse.json(
       {
-        token,
         user: mapUserPublicToJson(user),
         confirmationEmailSent,
       },
@@ -78,12 +75,6 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
     const message =
       err instanceof Error ? err.message : "Failed to register";
-    if (message === "JWT_SECRET is not set") {
-      return NextResponse.json(
-        { error: "Server auth is not configured" },
-        { status: 503 }
-      );
-    }
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
