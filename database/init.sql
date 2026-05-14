@@ -1,4 +1,6 @@
 -- Users, Services, Orders, Reviews — initialized on first Postgres container boot
+-- Services belong to a provider (seller). Buyers cannot order their own listings;
+-- reviewers cannot review their own listings.
 
 BEGIN;
 
@@ -13,6 +15,7 @@ CREATE TABLE users (
 
 CREATE TABLE services (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    provider_id     UUID NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
     name            TEXT NOT NULL,
     description     TEXT,
     price_cents     INTEGER NOT NULL DEFAULT 0 CHECK (price_cents >= 0),
@@ -20,6 +23,8 @@ CREATE TABLE services (
     longitude       DOUBLE PRECISION NOT NULL,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE INDEX idx_services_provider ON services (provider_id);
 
 CREATE TABLE orders (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -45,6 +50,54 @@ CREATE TABLE reviews (
 
 CREATE INDEX idx_reviews_service ON reviews (service_id);
 
+CREATE OR REPLACE FUNCTION forbid_order_self_purchase()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $fn$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM services
+    WHERE id = NEW.service_id
+      AND provider_id = NEW.user_id
+  ) THEN
+    RAISE EXCEPTION 'cannot purchase own service'
+      USING ERRCODE = '23514',
+            CONSTRAINT = 'orders_no_self_purchase';
+  END IF;
+  RETURN NEW;
+END;
+$fn$;
+
+CREATE TRIGGER trg_orders_no_self_purchase
+  BEFORE INSERT OR UPDATE OF user_id, service_id ON orders
+  FOR EACH ROW
+  EXECUTE FUNCTION forbid_order_self_purchase();
+
+CREATE OR REPLACE FUNCTION forbid_review_own_listing()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $fn$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM services
+    WHERE id = NEW.service_id
+      AND provider_id = NEW.user_id
+  ) THEN
+    RAISE EXCEPTION 'cannot review own service'
+      USING ERRCODE = '23514',
+            CONSTRAINT = 'reviews_no_self_review';
+  END IF;
+  RETURN NEW;
+END;
+$fn$;
+
+CREATE TRIGGER trg_reviews_no_self_review
+  BEFORE INSERT OR UPDATE OF user_id, service_id ON reviews
+  FOR EACH ROW
+  EXECUTE FUNCTION forbid_review_own_listing();
+
 -- Demo data (fixed UUIDs so the web UI and curl examples stay stable across resets)
 INSERT INTO users (id, email, full_name)
 VALUES (
@@ -53,11 +106,18 @@ VALUES (
     'Demo User'
 );
 
-INSERT INTO services (id, name, description, price_cents, latitude, longitude)
+INSERT INTO users (id, email, full_name)
+VALUES (
+    'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,
+    'api.vendor@example.com',
+    'API Vendor Inc.'
+);
+
+INSERT INTO services (id, provider_id, name, description, price_cents, latitude, longitude)
 VALUES
-    ('22222222-2222-4222-8222-222222222221'::uuid, 'Vision API', 'Image classification bundle', 4999, 42.6977, 23.3219),
-    ('22222222-2222-4222-8222-222222222222'::uuid, 'Text API', 'LLM completions per token', 1999, 42.6745, 23.3542),
-    ('22222222-2222-4222-8222-222222222223'::uuid, 'Speech API', 'Transcription pipeline', 3499, 42.7156, 23.2791);
+    ('22222222-2222-4222-8222-222222222221'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Vision API', 'Image classification bundle', 4999, 42.6977, 23.3219),
+    ('22222222-2222-4222-8222-222222222222'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Text API', 'LLM completions per token', 1999, 42.6745, 23.3542),
+    ('22222222-2222-4222-8222-222222222223'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Speech API', 'Transcription pipeline', 3499, 42.7156, 23.2791);
 
 INSERT INTO reviews (user_id, service_id, rating, comment)
 VALUES
@@ -76,10 +136,18 @@ VALUES
     ('33333333-3333-4333-8333-333333333303'::uuid, 'elizabeth@catalog.example', 'Elizabeth'),
     ('33333333-3333-4333-8333-333333333304'::uuid, 'zhana.k@catalog.example', 'Zhana K.');
 
-INSERT INTO services (id, name, description, price_cents, latitude, longitude)
+-- Listing owners (distinct from reviewers so self-review rules stay satisfied)
+INSERT INTO users (id, email, full_name)
+VALUES
+    ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid, 'sofia.handyman@example.com', 'Sofia Handyman'),
+    ('cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid, 'burgas.studio@example.com', 'Burgas Photo Studio'),
+    ('dddddddd-dddd-4ddd-8ddd-dddddddddddd'::uuid, 'plovdiv.chef@example.com', 'Plovdiv Chef Co.');
+
+INSERT INTO services (id, provider_id, name, description, price_cents, latitude, longitude)
 VALUES
     (
         '44444444-4444-4444-8444-444444444401'::uuid,
+        'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid,
         'Plaster',
         'Plasterer for applying plaster—best plasterer in the whole town. Category: construction and renovation work. Based in Sofia, Bulgaria. Price: 14 EUR per sq.m.',
         1400,
@@ -88,6 +156,7 @@ VALUES
     ),
     (
         '44444444-4444-4444-8444-444444444402'::uuid,
+        'cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid,
         'Photographer',
         'Photography for your very special personal event. Category: fun / events. Based in Burgas, Bulgaria. Price: 50 EUR per hour.',
         5000,
@@ -96,6 +165,7 @@ VALUES
     ),
     (
         '44444444-4444-4444-8444-444444444403'::uuid,
+        'dddddddd-dddd-4ddd-8ddd-dddddddddddd'::uuid,
         'Personal chef',
         'Hire a professional personal chef to cook your favorite meal. Category: fun / dining. Based in Plovdiv, Bulgaria. Price: 28 EUR per hour.',
         2800,

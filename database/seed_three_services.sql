@@ -13,10 +13,18 @@ VALUES
     ('33333333-3333-4333-8333-333333333304'::uuid, 'zhana.k@catalog.example', 'Zhana K.')
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO services (id, name, description, price_cents, latitude, longitude)
+INSERT INTO users (id, email, full_name)
+VALUES
+    ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid, 'sofia.handyman@example.com', 'Sofia Handyman'),
+    ('cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid, 'burgas.studio@example.com', 'Burgas Photo Studio'),
+    ('dddddddd-dddd-4ddd-8ddd-dddddddddddd'::uuid, 'plovdiv.chef@example.com', 'Plovdiv Chef Co.')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO services (id, provider_id, name, description, price_cents, latitude, longitude)
 VALUES
     (
         '44444444-4444-4444-8444-444444444401'::uuid,
+        'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid,
         'Plaster',
         'Plasterer for applying plaster—best plasterer in the whole town. Category: construction and renovation work. Based in Sofia, Bulgaria. Price: 14 EUR per sq.m.',
         1400,
@@ -25,6 +33,7 @@ VALUES
     ),
     (
         '44444444-4444-4444-8444-444444444402'::uuid,
+        'cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid,
         'Photographer',
         'Photography for your very special personal event. Category: fun / events. Based in Burgas, Bulgaria. Price: 50 EUR per hour.',
         5000,
@@ -33,6 +42,7 @@ VALUES
     ),
     (
         '44444444-4444-4444-8444-444444444403'::uuid,
+        'dddddddd-dddd-4ddd-8ddd-dddddddddddd'::uuid,
         'Personal chef',
         'Hire a professional personal chef to cook your favorite meal. Category: fun / dining. Based in Plovdiv, Bulgaria. Price: 28 EUR per hour.',
         2800,

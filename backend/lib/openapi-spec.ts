@@ -38,6 +38,45 @@ export const openApiDocument: Record<string, unknown> = {
           },
         },
       },
+      post: {
+        operationId: "createService",
+        summary: "Create a service listing (seller is provider_id)",
+        tags: ["Services"],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/CreateServiceBody" },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Service created",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Service" },
+              },
+            },
+          },
+          "400": {
+            description: "Validation error or unknown provider user",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+          "500": {
+            description: "Database or server error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+        },
+      },
     },
     "/services/suggest": {
       post: {
@@ -111,7 +150,8 @@ export const openApiDocument: Record<string, unknown> = {
             },
           },
           "400": {
-            description: "Validation error",
+            description:
+              "Validation error, unknown user/service, or self-purchase (buyer cannot order own listing)",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/ApiError" },
@@ -136,6 +176,8 @@ export const openApiDocument: Record<string, unknown> = {
         type: "object",
         required: [
           "id",
+          "provider_id",
+          "provider_label",
           "name",
           "price_cents",
           "created_at",
@@ -146,6 +188,15 @@ export const openApiDocument: Record<string, unknown> = {
         ],
         properties: {
           id: { type: "string", format: "uuid" },
+          provider_id: {
+            type: "string",
+            format: "uuid",
+            description: "User id of the listing owner (seller)",
+          },
+          provider_label: {
+            type: "string",
+            description: "Human-readable seller label (name, email, or id)",
+          },
           name: { type: "string" },
           description: { type: ["string", "null"] },
           price_cents: { type: "integer", minimum: 0 },
@@ -154,6 +205,22 @@ export const openApiDocument: Record<string, unknown> = {
           longitude: { type: "number" },
           avg_rating: { type: ["number", "null"] },
           review_count: { type: "integer", minimum: 0 },
+        },
+      },
+      CreateServiceBody: {
+        type: "object",
+        required: ["providerId", "name", "price_cents", "latitude", "longitude"],
+        properties: {
+          providerId: {
+            type: "string",
+            format: "uuid",
+            description: "Seller user id (must exist in users)",
+          },
+          name: { type: "string" },
+          description: { type: ["string", "null"] },
+          price_cents: { type: "integer", minimum: 0 },
+          latitude: { type: "number" },
+          longitude: { type: "number" },
         },
       },
       SuggestServiceBody: {

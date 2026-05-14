@@ -7,7 +7,8 @@ export default function ApiLandingPage(): JSX.Element {
       <h1 style={{ marginTop: 0 }}>REST API</h1>
       <p style={{ color: "#444" }}>
         This service exposes <code>GET /services</code>,{" "}
-        <code>POST /orders</code>, and OpenAPI at <code>/openapi.json</code>.
+        <code>POST /services</code>, <code>POST /orders</code>, and OpenAPI at{" "}
+        <code>/openapi.json</code>.
       </p>
       <ul>
         <li>
