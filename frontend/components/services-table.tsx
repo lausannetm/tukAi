@@ -38,6 +38,7 @@ export function ServicesTable(props: {
       }
     >
       <Column field="name" header="Name" sortable />
+      <Column field="provider_label" header="Seller" sortable />
       <Column header="Description" body={descriptionBody} />
       <Column header="Rating" body={ratingBody} sortable sortField="avg_rating" />
       <Column header="Price" body={priceBody} sortable sortField="price_cents" />

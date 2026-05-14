@@ -1,5 +1,7 @@
 export type ServiceDTO = {
   id: string;
+  provider_id: string;
+  provider_label: string;
   name: string;
   description: string | null;
   price_cents: number;

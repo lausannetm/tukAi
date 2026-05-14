@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { haversineKm } from "@/lib/haversine";
-import { toIsoTimestamp } from "@/lib/iso-timestamp";
 import {
   isOpenAiMockSuggestEnabled,
   pickServiceMock,
@@ -10,8 +9,10 @@ import {
   suggestServiceWithOpenAI,
   type CatalogItemForAi,
 } from "@/lib/openai-service-suggest";
-import { queryEnrichedServices } from "@/lib/services-queries";
-import type { EnrichedServiceRow } from "@/lib/services-queries";
+import {
+  queryEnrichedServices,
+  serviceJsonFromEnrichedRow,
+} from "@/lib/services-queries";
 
 type SuggestRequestBody = {
   query?: unknown;
@@ -32,33 +33,6 @@ function parseOptionalNumber(value: unknown): number | null {
 
 function isValidLatLng(lat: number, lng: number): boolean {
   return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
-}
-
-function serviceJsonFromRow(row: EnrichedServiceRow): {
-  id: string;
-  name: string;
-  description: string | null;
-  price_cents: number;
-  created_at: string;
-  latitude: number;
-  longitude: number;
-  avg_rating: number | null;
-  review_count: number;
-} {
-  return {
-    id: row.id,
-    name: row.name,
-    description: row.description,
-    price_cents: row.price_cents,
-    created_at: toIsoTimestamp(row.created_at),
-    latitude: Number(row.latitude),
-    longitude: Number(row.longitude),
-    avg_rating:
-      row.avg_rating !== null && row.avg_rating !== ""
-        ? Number.parseFloat(row.avg_rating)
-        : null,
-    review_count: Number.parseInt(row.review_count, 10),
-  };
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
@@ -112,7 +86,7 @@ export async function POST(req: Request): Promise<NextResponse> {
         });
       }
       return NextResponse.json({
-        service: serviceJsonFromRow(row),
+        service: serviceJsonFromEnrichedRow(row),
         reason: pick.reason,
       });
     }
@@ -177,7 +151,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     return NextResponse.json({
-      service: serviceJsonFromRow(row),
+      service: serviceJsonFromEnrichedRow(row),
       reason: pick.reason,
     });
   } catch (err) {
