@@ -96,7 +96,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       return NextResponse.json(
         {
           error:
-            "OPENAI_API_KEY is not set on the server. For a zero-cost demo, set OPENAI_MOCK_SUGGEST=1 instead.",
+            "OPENAI_API_KEY is not set. For a zero-cost demo set OPENAI_MOCK_SUGGEST=1 (project root .env for Docker Compose). Local next dev uses mock automatically when the key is empty.",
         },
         { status: 503 }
       );

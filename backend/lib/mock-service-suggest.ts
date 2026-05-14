@@ -1,10 +1,27 @@
 import { haversineKm } from "@/lib/haversine";
 import type { EnrichedServiceRow } from "@/lib/services-queries";
 
-/** When true, `/services/suggest` skips OpenAI and picks locally (zero API spend). */
+/**
+ * When true, `/services/suggest` skips OpenAI and picks locally (zero API spend).
+ *
+ * - Explicit: `OPENAI_MOCK_SUGGEST=1|true|yes` (or `0|false|no` to force off).
+ * - `next dev` only: if `OPENAI_API_KEY` is unset, mock is on automatically (no flag needed).
+ * - `next start` / Docker: mock only when the flag is set; host shell env from `npm run dev`
+ *   does not apply to the container — use the project root `.env` for Compose.
+ */
 export function isOpenAiMockSuggestEnabled(): boolean {
   const v = process.env.OPENAI_MOCK_SUGGEST?.trim().toLowerCase();
-  return v === "1" || v === "true" || v === "yes";
+  if (v === "1" || v === "true" || v === "yes") {
+    return true;
+  }
+  if (v === "0" || v === "false" || v === "no") {
+    return false;
+  }
+  const hasApiKey = Boolean(process.env.OPENAI_API_KEY?.trim());
+  if (process.env.NODE_ENV === "development" && !hasApiKey) {
+    return true;
+  }
+  return false;
 }
 
 /**

@@ -59,8 +59,8 @@ export function RegisterForm(): JSX.Element {
             severity: "success",
             summary: "Confirmation email sent",
             detail:
-              "Open MailHog at http://localhost:8025, open the message, and click the link. You can log in after you confirm. You are not signed in yet.",
-            life: 8000,
+              "Confirmation email is sent. You can log in after you confirm your email.",
+            life: 10000,
           });
           redirectTimerRef.current = window.setTimeout(() => {
             redirectTimerRef.current = null;
