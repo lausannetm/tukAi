@@ -1,26 +1,45 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Button } from "primereact/button";
 import { FloatLabel } from "primereact/floatlabel";
 import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
 import { Password } from "primereact/password";
+import { Toast } from "primereact/toast";
 import { postLogin } from "@/lib/auth-api";
 import { writeAuthSession } from "@/lib/auth-storage";
 
 export function LoginForm(): JSX.Element {
   const router = useRouter();
+  const toastRef = useRef<Toast>(null);
+  const redirectTimerRef = useRef<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [postLoginNav, setPostLoginNav] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [toastAppendTo, setToastAppendTo] = useState<HTMLElement | "self">("self");
+
+  useEffect(() => {
+    setToastAppendTo(document.body);
+  }, []);
+
+  useEffect(() => {
+    return (): void => {
+      if (redirectTimerRef.current !== null) {
+        window.clearTimeout(redirectTimerRef.current);
+        redirectTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     setError(null);
+    setPostLoginNav(false);
     void (async (): Promise<void> => {
       setSubmitting(true);
       try {
@@ -33,7 +52,20 @@ export function LoginForm(): JSX.Element {
           return;
         }
         writeAuthSession(result.data.token, result.data.user);
-        router.push("/");
+        const displayName = result.data.user.full_name?.trim();
+        setPostLoginNav(true);
+        toastRef.current?.show({
+          severity: "success",
+          summary: "Signed in",
+          detail: displayName
+            ? `Welcome back, ${displayName}.`
+            : "Welcome back. Redirecting to the home page.",
+          life: 4000,
+        });
+        redirectTimerRef.current = window.setTimeout(() => {
+          redirectTimerRef.current = null;
+          router.push("/");
+        }, 900);
       } finally {
         setSubmitting(false);
       }
@@ -45,6 +77,7 @@ export function LoginForm(): JSX.Element {
       onSubmit={handleSubmit}
       className="surface-card border-round-xl shadow-2 p-4 sm:p-5 max-w-md mx-auto w-full"
     >
+      <Toast ref={toastRef} position="top-center" appendTo={toastAppendTo} />
       <h1 className="mt-0 mb-4 text-2xl font-semibold text-color">Log in</h1>
 
       <div className="flex flex-column gap-4">
@@ -91,7 +124,7 @@ export function LoginForm(): JSX.Element {
             type="submit"
             label={submitting ? "Signing in…" : "Sign in"}
             icon="pi pi-sign-in"
-            disabled={submitting}
+            disabled={submitting || postLoginNav}
             loading={submitting}
             className="w-full sm:flex-1"
           />

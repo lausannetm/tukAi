@@ -8,19 +8,25 @@ import { FloatLabel } from "primereact/floatlabel";
 import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
 import { Password } from "primereact/password";
+import { Toast } from "primereact/toast";
 import { postRegister } from "@/lib/auth-api";
-
-type RegisterNotice = { severity: "success" | "warn"; text: string };
 
 export function RegisterForm(): JSX.Element {
   const router = useRouter();
+  const toastRef = useRef<Toast>(null);
   const redirectTimerRef = useRef<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [pendingRedirect, setPendingRedirect] = useState(false);
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<RegisterNotice | null>(null);
+  /** PrimeToast defaults to `appendTo="self"`; portaling to body avoids clipping under shell/layout. */
+  const [toastAppendTo, setToastAppendTo] = useState<HTMLElement | "self">("self");
+
+  useEffect(() => {
+    setToastAppendTo(document.body);
+  }, []);
 
   useEffect(() => {
     return (): void => {
@@ -34,7 +40,7 @@ export function RegisterForm(): JSX.Element {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     setError(null);
-    setNotice(null);
+    setPendingRedirect(false);
     void (async (): Promise<void> => {
       setSubmitting(true);
       try {
@@ -48,9 +54,13 @@ export function RegisterForm(): JSX.Element {
           return;
         }
         if (result.data.confirmationEmailSent) {
-          setNotice({
+          setPendingRedirect(true);
+          toastRef.current?.show({
             severity: "success",
-            text: "We sent a confirmation email. Open MailHog at http://localhost:8025, click the link in the message, then you can log in. You are not signed in yet.",
+            summary: "Confirmation email sent",
+            detail:
+              "Open MailHog at http://localhost:8025, open the message, and click the link. You can log in after you confirm. You are not signed in yet.",
+            life: 8000,
           });
           redirectTimerRef.current = window.setTimeout(() => {
             redirectTimerRef.current = null;
@@ -58,9 +68,13 @@ export function RegisterForm(): JSX.Element {
           }, 4000);
           return;
         }
-        setNotice({
+        setPendingRedirect(true);
+        toastRef.current?.show({
           severity: "warn",
-          text: "Account created, but the confirmation email could not be sent. Start MailHog (`docker compose up -d mailhog`) or set SMTP_HOST=127.0.0.1 and SMTP_PORT=1025. You can log in only after you confirm your email.",
+          summary: "Account created — email not sent",
+          detail:
+            "Start MailHog (`docker compose up -d mailhog`) or set SMTP_HOST=127.0.0.1 and SMTP_PORT=1025. You can log in only after you confirm your email.",
+          life: 10000,
         });
         redirectTimerRef.current = window.setTimeout(() => {
           redirectTimerRef.current = null;
@@ -77,6 +91,7 @@ export function RegisterForm(): JSX.Element {
       onSubmit={handleSubmit}
       className="surface-card border-round-xl shadow-2 p-4 sm:p-5 max-w-md mx-auto w-full"
     >
+      <Toast ref={toastRef} position="top-center" appendTo={toastAppendTo} />
       <h1 className="mt-0 mb-4 text-2xl font-semibold text-color">Create account</h1>
 
       <div className="flex flex-column gap-4">
@@ -131,19 +146,11 @@ export function RegisterForm(): JSX.Element {
           <Message severity="error" text={error} className="w-full border-round-lg" />
         ) : null}
 
-        {notice ? (
-          <Message
-            severity={notice.severity}
-            text={notice.text}
-            className="w-full border-round-lg"
-          />
-        ) : null}
-
         <Button
           type="submit"
           label={submitting ? "Creating account…" : "Register"}
           icon="pi pi-user-plus"
-          disabled={submitting || notice !== null}
+          disabled={submitting || pendingRedirect}
           loading={submitting}
           className="w-full"
         />
