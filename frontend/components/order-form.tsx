@@ -7,6 +7,7 @@ import { FloatLabel } from "primereact/floatlabel";
 import { InputNumber } from "primereact/inputnumber";
 import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
+import { readStoredUser } from "@/lib/auth-storage";
 import type { SubmitOrderFn } from "@/lib/submit-order-fn";
 import type { ServiceDTO } from "@/lib/types";
 
@@ -22,6 +23,15 @@ export function OrderForm(props: {
   const [userId, setUserId] = useState(props.demoUserId);
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState<number>(1);
+  const [usingStoredUser, setUsingStoredUser] = useState(false);
+
+  useEffect(() => {
+    const stored = readStoredUser();
+    if (stored) {
+      setUserId(stored.id);
+      setUsingStoredUser(true);
+    }
+  }, []);
 
   const options: ServiceOption[] = useMemo(
     () =>
@@ -77,7 +87,9 @@ export function OrderForm(props: {
           <label htmlFor="userId">User ID (UUID)</label>
         </FloatLabel>
         <small className="text-color-secondary block mt-2">
-          Seeded demo user from the database script.
+          {usingStoredUser
+            ? "Using your logged-in account ID. You can override the UUID if needed."
+            : "Seeded demo user from the database script."}
         </small>
       </div>
 

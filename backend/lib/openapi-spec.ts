@@ -129,8 +129,220 @@ export const openApiDocument: Record<string, unknown> = {
         },
       },
     },
+    "/auth/register": {
+      post: {
+        operationId: "registerUser",
+        summary: "Create an account (returns JWT)",
+        tags: ["Auth"],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/RegisterBody" },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "User created",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/AuthTokenResponse" },
+              },
+            },
+          },
+          "400": {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+          "409": {
+            description: "Email already registered",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+          "503": {
+            description: "JWT_SECRET not configured",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+          "500": {
+            description: "Database or server error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/auth/login": {
+      post: {
+        operationId: "loginUser",
+        summary: "Log in with email and password (returns JWT)",
+        tags: ["Auth"],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/LoginBody" },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Authenticated",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/AuthTokenResponse" },
+              },
+            },
+          },
+          "400": {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+          "401": {
+            description: "Invalid credentials",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+          "503": {
+            description: "JWT_SECRET not configured",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+          "500": {
+            description: "Database or server error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/auth/me": {
+      get: {
+        operationId: "getCurrentUser",
+        summary: "Current user and owned services (JWT)",
+        tags: ["Auth"],
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Profile and services where owner_user_id matches",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MeResponse" },
+              },
+            },
+          },
+          "401": {
+            description: "Missing or invalid token",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+          "404": {
+            description: "User deleted since token was issued",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+          "503": {
+            description: "JWT_SECRET not configured",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+          "500": {
+            description: "Database or server error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/auth/confirm-email": {
+      get: {
+        operationId: "confirmEmail",
+        summary: "Confirm email address (token from registration email)",
+        tags: ["Auth"],
+        parameters: [
+          {
+            name: "token",
+            in: "query",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Email confirmed",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ConfirmEmailResponse" },
+              },
+            },
+          },
+          "400": {
+            description: "Missing or invalid token",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+          "500": {
+            description: "Database or server error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+        },
+      },
+    },
   },
   components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+      },
+    },
     schemas: {
       Service: {
         type: "object",
@@ -214,6 +426,65 @@ export const openApiDocument: Record<string, unknown> = {
             minimum: 1,
             default: 1,
             description: "Number of units to order",
+          },
+        },
+      },
+      RegisterBody: {
+        type: "object",
+        required: ["email", "password"],
+        properties: {
+          email: { type: "string", format: "email" },
+          password: { type: "string", minLength: 8 },
+          fullName: { type: "string" },
+          full_name: { type: "string" },
+        },
+      },
+      LoginBody: {
+        type: "object",
+        required: ["email", "password"],
+        properties: {
+          email: { type: "string", format: "email" },
+          password: { type: "string" },
+        },
+      },
+      UserPublic: {
+        type: "object",
+        required: ["id", "email", "full_name", "created_at"],
+        properties: {
+          id: { type: "string", format: "uuid" },
+          email: { type: "string" },
+          full_name: { type: ["string", "null"] },
+          created_at: { type: "string", format: "date-time" },
+        },
+      },
+      AuthTokenResponse: {
+        type: "object",
+        required: ["token", "user"],
+        properties: {
+          token: { type: "string" },
+          user: { $ref: "#/components/schemas/UserPublic" },
+          confirmationEmailSent: {
+            type: "boolean",
+            description: "True if the confirmation email was handed off to SMTP (e.g. MailHog)",
+          },
+        },
+      },
+      ConfirmEmailResponse: {
+        type: "object",
+        required: ["ok", "email"],
+        properties: {
+          ok: { type: "boolean", const: true },
+          email: { type: "string" },
+        },
+      },
+      MeResponse: {
+        type: "object",
+        required: ["user", "services"],
+        properties: {
+          user: { $ref: "#/components/schemas/UserPublic" },
+          services: {
+            type: "array",
+            items: { $ref: "#/components/schemas/Service" },
           },
         },
       },
