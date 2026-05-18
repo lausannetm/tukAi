@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { isAllowedServiceImageUrl } from "@/lib/service-image-storage";
 import {
   queryEnrichedServices,
   serviceJsonFromEnrichedRow,
@@ -64,9 +65,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       typeof rec.location === "string" ? rec.location.trim().slice(0, 500) : "";
     const imageUrlRaw = rec.image_url ?? rec.imageUrl;
     const image_url =
-      typeof imageUrlRaw === "string" && imageUrlRaw.trim().length > 0
-        ? imageUrlRaw.trim().slice(0, 2000)
-        : null;
+      typeof imageUrlRaw === "string" ? imageUrlRaw.trim().slice(0, 2000) : "";
     const priceCentsRaw = rec.price_cents ?? rec.priceCents;
     const price_cents =
       typeof priceCentsRaw === "number" &&
@@ -112,6 +111,24 @@ export async function POST(request: Request): Promise<NextResponse> {
     if (price_cents === null) {
       return NextResponse.json(
         { error: "price_cents is required and must be a non-negative integer." },
+        { status: 400 }
+      );
+    }
+    if (!image_url) {
+      return NextResponse.json(
+        {
+          error:
+            "image_url is required. Upload an image via POST /services/upload first.",
+        },
+        { status: 400 }
+      );
+    }
+    if (!isAllowedServiceImageUrl(image_url)) {
+      return NextResponse.json(
+        {
+          error:
+            "image_url must be a path returned from POST /services/upload or a seeded /images/services/ path.",
+        },
         { status: 400 }
       );
     }

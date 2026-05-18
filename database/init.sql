@@ -28,7 +28,7 @@ CREATE TABLE services (
     price_cents     INTEGER NOT NULL DEFAULT 0 CHECK (price_cents >= 0),
     location        TEXT NOT NULL,
     rating          NUMERIC(4, 2) CHECK (rating IS NULL OR (rating >= 0 AND rating <= 5)),
-    image_url       TEXT,
+    image_url       TEXT NOT NULL,
     latitude        DOUBLE PRECISION NOT NULL,
     longitude       DOUBLE PRECISION NOT NULL,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -125,9 +125,9 @@ VALUES (
 
 INSERT INTO services (id, provider_id, name, description, price_cents, location, rating, image_url, latitude, longitude)
 VALUES
-    ('22222222-2222-4222-8222-222222222221'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Vision API', 'Image classification bundle. Category: it.', 4999, 'Sofia, Bulgaria', 4.85, NULL, 42.6977, 23.3219),
-    ('22222222-2222-4222-8222-222222222222'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Text API', 'LLM completions per token. Category: it.', 1999, 'Sofia, Bulgaria', NULL, NULL, 42.6745, 23.3542),
-    ('22222222-2222-4222-8222-222222222223'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Speech API', 'Transcription pipeline. Category: it.', 3499, 'Sofia, Bulgaria', NULL, NULL, 42.7156, 23.2791);
+    ('22222222-2222-4222-8222-222222222221'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Vision API', 'Image classification bundle. Category: it.', 4999, 'Sofia, Bulgaria', 4.85, '/images/services/vision-api.png', 42.6977, 23.3219),
+    ('22222222-2222-4222-8222-222222222222'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Text API', 'LLM completions per token. Category: it.', 1999, 'Sofia, Bulgaria', NULL, '/images/services/text-api.png', 42.6745, 23.3542),
+    ('22222222-2222-4222-8222-222222222223'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Speech API', 'Transcription pipeline. Category: it.', 3499, 'Sofia, Bulgaria', NULL, '/images/services/speech-api.png', 42.7156, 23.2791);
 
 INSERT INTO reviews (user_id, service_id, rating, comment)
 VALUES
@@ -163,7 +163,7 @@ VALUES
         1400,
         'Sofia, Bulgaria',
         NULL,
-        NULL,
+        '/images/services/plaster.png',
         42.6977,
         23.3219
     ),
@@ -175,7 +175,7 @@ VALUES
         5000,
         'Burgas, Bulgaria',
         4.90,
-        NULL,
+        '/images/services/photographer.png',
         42.5048,
         27.4626
     ),
@@ -187,7 +187,7 @@ VALUES
         2800,
         'Plovdiv, Bulgaria',
         5.00,
-        NULL,
+        '/images/services/personal-chef.png',
         42.1354,
         24.7453
     );

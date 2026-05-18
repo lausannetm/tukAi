@@ -11,7 +11,7 @@ export type ServiceDTO = {
   location: string;
   /** Review average when present, otherwise optional listing rating. */
   rating: number | null;
-  image_url: string | null;
+  image_url: string;
   created_at: string;
   latitude: number;
   longitude: number;

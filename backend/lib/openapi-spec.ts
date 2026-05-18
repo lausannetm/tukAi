@@ -11,6 +11,52 @@ export const openApiDocument: Record<string, unknown> = {
     { url: "/", description: "Current host" },
   ],
   paths: {
+    "/services/upload": {
+      post: {
+        operationId: "uploadServiceImage",
+        summary: "Upload a service listing image",
+        tags: ["Services"],
+        requestBody: {
+          required: true,
+          content: {
+            "multipart/form-data": {
+              schema: {
+                type: "object",
+                required: ["image"],
+                properties: {
+                  image: { type: "string", format: "binary" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Image stored",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["image_url", "filename"],
+                  properties: {
+                    image_url: { type: "string" },
+                    filename: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          "400": {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ApiError" },
+              },
+            },
+          },
+        },
+      },
+    },
     "/services": {
       get: {
         operationId: "listServices",
@@ -450,7 +496,7 @@ export const openApiDocument: Record<string, unknown> = {
             type: ["number", "null"],
             description: "Review average when present, else optional listing rating",
           },
-          image_url: { type: ["string", "null"] },
+          image_url: { type: "string" },
           created_at: { type: "string", format: "date-time" },
           latitude: { type: "number" },
           longitude: { type: "number" },
@@ -465,6 +511,7 @@ export const openApiDocument: Record<string, unknown> = {
           "name",
           "description",
           "location",
+          "image_url",
           "price_cents",
           "latitude",
           "longitude",
@@ -489,7 +536,11 @@ export const openApiDocument: Record<string, unknown> = {
             maximum: 5,
             description: "Optional listing rating set by the provider",
           },
-          image_url: { type: "string" },
+          image_url: {
+            type: "string",
+            description:
+              "Path from POST /services/upload (/uploads/services/…) or seeded /images/services/…",
+          },
           price_cents: { type: "integer", minimum: 0 },
           latitude: { type: "number" },
           longitude: { type: "number" },

@@ -35,8 +35,11 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       # Set to 1 for a zero-OpenAI-cost demo (local heuristic instead of ChatGPT).
       OPENAI_MOCK_SUGGEST: ${OPENAI_MOCK_SUGGEST:-}
+      SERVICE_UPLOADS_DIR: /app/uploads/services
     ports:
       - "${BACKEND_PORT:-3001}:3000"
+    volumes:
+      - service_uploads:/app/uploads/services
     depends_on:
       db:
         condition: service_healthy
@@ -69,3 +72,4 @@ services:
 
 volumes:
   pgdata:
+  service_uploads:

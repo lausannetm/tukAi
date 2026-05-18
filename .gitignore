@@ -33,3 +33,7 @@ coverage/
 # Vercel / Turbo (if used later)
 .vercel
 .turbo
+
+# Uploaded service images (local dev)
+backend/uploads/services/*
+!backend/uploads/.gitkeep

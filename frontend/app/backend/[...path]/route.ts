@@ -30,9 +30,9 @@ async function proxy(
   }
 
   const method = request.method;
-  let body: string | undefined;
+  let body: BodyInit | undefined;
   if (method !== "GET" && method !== "HEAD") {
-    body = await request.text();
+    body = await request.arrayBuffer();
   }
 
   const upstream = await fetch(url, {

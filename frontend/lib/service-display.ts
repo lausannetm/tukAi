@@ -3,6 +3,7 @@ import {
   localCategoryImage,
   type ServiceCategoryId,
 } from "@/lib/service-categories";
+import { backendPublicOrigin } from "@/lib/public-backend";
 import type { ServiceDTO } from "@/lib/types";
 
 export function formatServicePrice(priceCents: number): string {
@@ -20,9 +21,24 @@ export function formatServiceRating(rating: number | null): string | null {
   return rating.toFixed(2);
 }
 
+/** Resolves DB image_url to a browser-loadable URL. */
+export function resolveServiceImageUrl(imageUrl: string | null | undefined): string {
+  const value = imageUrl?.trim() ?? "";
+  if (!value) {
+    return localCategoryImage("all");
+  }
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    return value;
+  }
+  if (value.startsWith("/uploads/")) {
+    return `${backendPublicOrigin()}${value}`;
+  }
+  return value;
+}
+
 export function serviceCardImageUrl(service: ServiceDTO): string {
   if (service.image_url?.trim()) {
-    return service.image_url.trim();
+    return resolveServiceImageUrl(service.image_url);
   }
   const category = inferServiceCategory(service);
   const categoryId: ServiceCategoryId = category ?? "all";
