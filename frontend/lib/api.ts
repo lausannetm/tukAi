@@ -18,7 +18,25 @@ export async function fetchServices(): Promise<ServiceDTO[]> {
     throw new Error(`Failed to load services (${response.status})`);
   }
 
-  return (await response.json()) as ServiceDTO[];
+  const rows = (await response.json()) as ServiceDTO[];
+  return rows.map(normalizeServiceDto);
+}
+
+function normalizeServiceDto(row: ServiceDTO): ServiceDTO {
+  const userId = row.user_id ?? row.provider_id ?? "";
+  const rating =
+    row.rating ??
+    (row.avg_rating !== null && row.avg_rating !== undefined ? row.avg_rating : null);
+
+  return {
+    ...row,
+    user_id: userId,
+    provider_id: row.provider_id ?? userId,
+    description: row.description ?? "",
+    location: row.location ?? "",
+    rating,
+    image_url: row.image_url ?? null,
+  };
 }
 
 export async function postOrder(payload: {

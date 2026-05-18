@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Card } from "primereact/card";
 import { Message } from "primereact/message";
 import { useEffect, useMemo, useState } from "react";
-import { ServicesTable } from "@/components/services-table";
+import { ServiceCardGrid } from "@/components/catalog/service-card-grid";
 import type { ServiceDTO } from "@/lib/types";
 import {
   filterServicesByCategory,
@@ -87,15 +86,13 @@ export function CatalogCategoryServicesView(props: {
             />
           ) : null}
 
-          <Card
-            title="Services"
-            className="shadow-3 mb-3 md:mb-4 border-round-lg"
-          >
-            <ServicesTable
+          <section className="catalog-services-section" aria-label="Services">
+            <ServiceCardGrid
+              categoryId={props.categoryId}
               services={filteredServices}
               highlightServiceId={props.highlightServiceId}
             />
-          </Card>
+          </section>
         </div>
       </div>
     </div>

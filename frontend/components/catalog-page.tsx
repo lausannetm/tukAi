@@ -22,6 +22,7 @@ export function CatalogPage(props: {
   showOrderForm?: boolean;
   suggestedServiceId?: string;
   highlightServiceId?: string;
+  initialServiceId?: string;
 }): JSX.Element {
   const showServices = props.showServices ?? true;
   const showOrderForm = props.showOrderForm ?? true;
@@ -113,6 +114,7 @@ export function CatalogPage(props: {
                 services={props.services}
                 demoUserId={props.demoUserId}
                 submitOrderForm={props.submitOrderForm}
+                initialServiceId={props.initialServiceId}
               />
             </Card>
           ) : null}

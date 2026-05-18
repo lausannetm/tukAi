@@ -12,11 +12,15 @@ function descriptionBody(row: ServiceDTO): string {
   return row.description ?? "—";
 }
 
+function locationBody(row: ServiceDTO): string {
+  return row.location?.trim() || "—";
+}
+
 function ratingBody(row: ServiceDTO): string {
-  if (row.avg_rating === null || row.avg_rating === undefined) {
+  if (row.rating === null || row.rating === undefined) {
     return "—";
   }
-  return `${row.avg_rating.toFixed(1)} (${row.review_count})`;
+  return `${row.rating.toFixed(2)} (${row.review_count})`;
 }
 
 export function ServicesTable(props: {
@@ -39,8 +43,9 @@ export function ServicesTable(props: {
     >
       <Column field="name" header="Name" sortable />
       <Column field="provider_label" header="Seller" sortable />
+      <Column header="Location" body={locationBody} sortable sortField="location" />
       <Column header="Description" body={descriptionBody} />
-      <Column header="Rating" body={ratingBody} sortable sortField="avg_rating" />
+      <Column header="Rating" body={ratingBody} sortable sortField="rating" />
       <Column header="Price" body={priceBody} sortable sortField="price_cents" />
       <Column
         header="ID"

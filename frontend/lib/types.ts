@@ -1,11 +1,17 @@
 export type ServiceDTO = {
   id: string;
-  /** Listing owner; may be absent on older API payloads. */
+  /** Creator of the listing. */
+  user_id: string;
+  /** @deprecated Use user_id. Kept for older payloads. */
   provider_id?: string;
   provider_label?: string;
   name: string;
-  description: string | null;
+  description: string;
   price_cents: number;
+  location: string;
+  /** Review average when present, otherwise optional listing rating. */
+  rating: number | null;
+  image_url: string | null;
   created_at: string;
   latitude: number;
   longitude: number;

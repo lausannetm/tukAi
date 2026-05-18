@@ -36,6 +36,7 @@ export function filterServicesByQuery(
   return services.filter((s) => {
     const name = s.name.toLowerCase();
     const desc = (s.description ?? "").toLowerCase();
-    return name.includes(q) || desc.includes(q);
+    const location = (s.location ?? "").toLowerCase();
+    return name.includes(q) || desc.includes(q) || location.includes(q);
   });
 }

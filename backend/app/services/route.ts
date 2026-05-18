@@ -17,6 +17,17 @@ function isValidLatLng(lat: number, lng: number): boolean {
   return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
 }
 
+function parseOptionalListingRating(raw: unknown): number | null {
+  if (raw === undefined || raw === null || raw === "") {
+    return null;
+  }
+  const n = typeof raw === "number" ? raw : Number.parseFloat(String(raw));
+  if (!Number.isFinite(n) || n < 0 || n > 5) {
+    return null;
+  }
+  return Math.round(n * 100) / 100;
+}
+
 export async function GET(): Promise<NextResponse> {
   try {
     const rows = await queryEnrichedServices();
@@ -40,14 +51,21 @@ export async function POST(request: Request): Promise<NextResponse> {
         ? rec.providerId.trim()
         : typeof rec.provider_id === "string"
           ? rec.provider_id.trim()
-          : "";
+          : typeof rec.user_id === "string"
+            ? rec.user_id.trim()
+            : "";
     const name =
       typeof rec.name === "string" ? rec.name.trim().slice(0, 500) : "";
     const description =
-      typeof rec.description === "string" || rec.description === null
-        ? rec.description === null
-          ? null
-          : rec.description.trim().slice(0, 8000)
+      typeof rec.description === "string"
+        ? rec.description.trim().slice(0, 8000)
+        : "";
+    const location =
+      typeof rec.location === "string" ? rec.location.trim().slice(0, 500) : "";
+    const imageUrlRaw = rec.image_url ?? rec.imageUrl;
+    const image_url =
+      typeof imageUrlRaw === "string" && imageUrlRaw.trim().length > 0
+        ? imageUrlRaw.trim().slice(0, 2000)
         : null;
     const priceCentsRaw = rec.price_cents ?? rec.priceCents;
     const price_cents =
@@ -58,12 +76,18 @@ export async function POST(request: Request): Promise<NextResponse> {
         : null;
     const latRaw = rec.latitude ?? rec.lat;
     const lngRaw = rec.longitude ?? rec.lng;
-    const latitude = typeof latRaw === "number" && Number.isFinite(latRaw) ? latRaw : null;
-    const longitude = typeof lngRaw === "number" && Number.isFinite(lngRaw) ? lngRaw : null;
+    const latitude =
+      typeof latRaw === "number" && Number.isFinite(latRaw) ? latRaw : null;
+    const longitude =
+      typeof lngRaw === "number" && Number.isFinite(lngRaw) ? lngRaw : null;
+    const listingRating = parseOptionalListingRating(rec.rating);
 
     if (!providerId || !isUuid(providerId)) {
       return NextResponse.json(
-        { error: "providerId is required and must be a UUID string." },
+        {
+          error:
+            "user_id (or providerId) is required and must be a UUID string.",
+        },
         { status: 400 }
       );
     }
@@ -73,9 +97,32 @@ export async function POST(request: Request): Promise<NextResponse> {
         { status: 400 }
       );
     }
+    if (!description) {
+      return NextResponse.json(
+        { error: "description is required and must be a non-empty string." },
+        { status: 400 }
+      );
+    }
+    if (!location) {
+      return NextResponse.json(
+        { error: "location is required and must be a non-empty string." },
+        { status: 400 }
+      );
+    }
     if (price_cents === null) {
       return NextResponse.json(
         { error: "price_cents is required and must be a non-negative integer." },
+        { status: 400 }
+      );
+    }
+    if (
+      rec.rating !== undefined &&
+      rec.rating !== null &&
+      rec.rating !== "" &&
+      listingRating === null
+    ) {
+      return NextResponse.json(
+        { error: "rating must be a number between 0 and 5 when provided." },
         { status: 400 }
       );
     }
@@ -90,8 +137,28 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     const inserted = await query<EnrichedServiceRow>(
-      `INSERT INTO services (provider_id, name, description, price_cents, latitude, longitude)
-       VALUES ($1::uuid, $2, $3, $4::integer, $5::double precision, $6::double precision)
+      `INSERT INTO services (
+         provider_id,
+         name,
+         description,
+         price_cents,
+         location,
+         rating,
+         image_url,
+         latitude,
+         longitude
+       )
+       VALUES (
+         $1::uuid,
+         $2,
+         $3,
+         $4::integer,
+         $5,
+         $6::numeric,
+         $7,
+         $8::double precision,
+         $9::double precision
+       )
        RETURNING
          id,
          provider_id,
@@ -103,12 +170,25 @@ export async function POST(request: Request): Promise<NextResponse> {
          name,
          description,
          price_cents,
+         location,
+         rating::text AS listing_rating,
+         image_url,
          created_at,
          latitude,
          longitude,
          NULL::text AS avg_rating,
          '0'::text AS review_count`,
-      [providerId, name, description, price_cents, latitude, longitude]
+      [
+        providerId,
+        name,
+        description,
+        price_cents,
+        location,
+        listingRating,
+        image_url,
+        latitude,
+        longitude,
+      ]
     );
     const row = inserted[0];
     if (!row) {
@@ -129,7 +209,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         : null;
     if (code === "23503") {
       return NextResponse.json(
-        { error: "providerId does not match an existing user." },
+        { error: "user_id does not match an existing user." },
         { status: 400 }
       );
     }

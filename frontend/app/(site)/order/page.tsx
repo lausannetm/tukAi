@@ -4,8 +4,14 @@ import { loadCatalogContext } from "@/lib/catalog-load";
 
 const DEMO_USER_ID = "11111111-1111-4111-8111-111111111111";
 
-export default async function OrderRoute(): Promise<JSX.Element> {
+type OrderRouteProps = {
+  searchParams?: Promise<{ serviceId?: string }>;
+};
+
+export default async function OrderRoute(props: OrderRouteProps): Promise<JSX.Element> {
   const ctx = await loadCatalogContext();
+  const sp = (await props.searchParams) ?? {};
+  const initialServiceId = sp.serviceId?.trim() || undefined;
 
   return (
     <CatalogPage
@@ -17,6 +23,7 @@ export default async function OrderRoute(): Promise<JSX.Element> {
       submitOrderForm={submitOrderForm}
       showServices={false}
       showOrderForm
+      initialServiceId={initialServiceId}
     />
   );
 }

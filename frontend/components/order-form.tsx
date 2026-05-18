@@ -17,6 +17,7 @@ export function OrderForm(props: {
   services: ServiceDTO[];
   demoUserId: string;
   submitOrderForm: SubmitOrderFn;
+  initialServiceId?: string;
 }): JSX.Element {
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<string | null>(null);
@@ -65,6 +66,15 @@ export function OrderForm(props: {
       setServiceId(null);
       return;
     }
+    const preferredId = props.initialServiceId?.trim();
+    if (
+      preferredId &&
+      purchasableServices.some((s) => s.id === preferredId) &&
+      serviceId !== preferredId
+    ) {
+      setServiceId(preferredId);
+      return;
+    }
     if (serviceId === null) {
       setServiceId(purchasableServices[0].id);
       return;
@@ -72,7 +82,7 @@ export function OrderForm(props: {
     if (!purchasableServices.some((s) => s.id === serviceId)) {
       setServiceId(purchasableServices[0].id);
     }
-  }, [purchasableServices, serviceId]);
+  }, [purchasableServices, serviceId, props.initialServiceId]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();

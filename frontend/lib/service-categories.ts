@@ -16,12 +16,19 @@ export type CatalogCategory = {
   imageUrl: string;
 };
 
-function localCategoryImage(categoryId: ServiceCategoryId): string {
+export function localCategoryImage(categoryId: ServiceCategoryId): string {
   return `/images/categories/${categoryId}.png`;
 }
 
 export function categoryCatalogPath(categoryId: ServiceCategoryId): string {
   return `/catalog/${categoryId}`;
+}
+
+export function serviceCatalogPath(
+  categoryId: ServiceCategoryId,
+  serviceId: string,
+): string {
+  return `/catalog/${categoryId}/${serviceId}`;
 }
 
 export const CATALOG_CATEGORIES: CatalogCategory[] = [

@@ -24,8 +24,11 @@ CREATE TABLE services (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     provider_id     UUID NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
     name            TEXT NOT NULL,
-    description     TEXT,
+    description     TEXT NOT NULL,
     price_cents     INTEGER NOT NULL DEFAULT 0 CHECK (price_cents >= 0),
+    location        TEXT NOT NULL,
+    rating          NUMERIC(4, 2) CHECK (rating IS NULL OR (rating >= 0 AND rating <= 5)),
+    image_url       TEXT,
     latitude        DOUBLE PRECISION NOT NULL,
     longitude       DOUBLE PRECISION NOT NULL,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -120,11 +123,11 @@ VALUES (
     'API Vendor Inc.'
 );
 
-INSERT INTO services (id, provider_id, name, description, price_cents, latitude, longitude)
+INSERT INTO services (id, provider_id, name, description, price_cents, location, rating, image_url, latitude, longitude)
 VALUES
-    ('22222222-2222-4222-8222-222222222221'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Vision API', 'Image classification bundle', 4999, 42.6977, 23.3219),
-    ('22222222-2222-4222-8222-222222222222'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Text API', 'LLM completions per token', 1999, 42.6745, 23.3542),
-    ('22222222-2222-4222-8222-222222222223'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Speech API', 'Transcription pipeline', 3499, 42.7156, 23.2791);
+    ('22222222-2222-4222-8222-222222222221'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Vision API', 'Image classification bundle. Category: it.', 4999, 'Sofia, Bulgaria', 4.85, NULL, 42.6977, 23.3219),
+    ('22222222-2222-4222-8222-222222222222'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Text API', 'LLM completions per token. Category: it.', 1999, 'Sofia, Bulgaria', NULL, NULL, 42.6745, 23.3542),
+    ('22222222-2222-4222-8222-222222222223'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Speech API', 'Transcription pipeline. Category: it.', 3499, 'Sofia, Bulgaria', NULL, NULL, 42.7156, 23.2791);
 
 INSERT INTO reviews (user_id, service_id, rating, comment)
 VALUES
@@ -150,14 +153,17 @@ VALUES
     ('cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid, 'burgas.studio@example.com', 'Burgas Photo Studio'),
     ('dddddddd-dddd-4ddd-8ddd-dddddddddddd'::uuid, 'plovdiv.chef@example.com', 'Plovdiv Chef Co.');
 
-INSERT INTO services (id, provider_id, name, description, price_cents, latitude, longitude)
+INSERT INTO services (id, provider_id, name, description, price_cents, location, rating, image_url, latitude, longitude)
 VALUES
     (
         '44444444-4444-4444-8444-444444444401'::uuid,
         'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid,
         'Plaster',
-        'Plasterer for applying plaster—best plasterer in the whole town. Category: construction and renovation work. Based in Sofia, Bulgaria. Price: 14 EUR per sq.m.',
+        'Plasterer for applying plaster—best plasterer in the whole town. Category: construction and renovation work. Price: 14 EUR per sq.m.',
         1400,
+        'Sofia, Bulgaria',
+        NULL,
+        NULL,
         42.6977,
         23.3219
     ),
@@ -165,8 +171,11 @@ VALUES
         '44444444-4444-4444-8444-444444444402'::uuid,
         'cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid,
         'Photographer',
-        'Photography for your very special personal event. Category: fun / events. Based in Burgas, Bulgaria. Price: 50 EUR per hour.',
+        'Photography for your very special personal event. Category: photography. Price: 50 EUR per hour.',
         5000,
+        'Burgas, Bulgaria',
+        4.90,
+        NULL,
         42.5048,
         27.4626
     ),
@@ -174,8 +183,11 @@ VALUES
         '44444444-4444-4444-8444-444444444403'::uuid,
         'dddddddd-dddd-4ddd-8ddd-dddddddddddd'::uuid,
         'Personal chef',
-        'Hire a professional personal chef to cook your favorite meal. Category: fun / dining. Based in Plovdiv, Bulgaria. Price: 28 EUR per hour.',
+        'Hire a professional personal chef to cook your favorite meal. Category: chefs. Price: 28 EUR per hour.',
         2800,
+        'Plovdiv, Bulgaria',
+        5.00,
+        NULL,
         42.1354,
         24.7453
     );
