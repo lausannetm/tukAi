@@ -14,8 +14,8 @@ export default function ListServicePage(): JSX.Element {
           List a service
         </h1>
         <p className="text-color-secondary m-0 line-height-3">
-          Every listing needs a photo. Upload an image, then fill in the details for
-          your offer.
+          Add a photo of your offer, or leave it blank to use the default service
+          image in the catalog.
         </p>
       </header>
       <CreateServiceForm />

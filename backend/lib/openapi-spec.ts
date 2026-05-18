@@ -511,7 +511,6 @@ export const openApiDocument: Record<string, unknown> = {
           "name",
           "description",
           "location",
-          "image_url",
           "price_cents",
           "latitude",
           "longitude",

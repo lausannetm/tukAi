@@ -1,4 +1,5 @@
 import { query } from "@/lib/db";
+import { effectiveServiceImageUrl } from "@/lib/service-image-storage";
 import { toIsoTimestamp } from "@/lib/iso-timestamp";
 
 export type EnrichedServiceRow = {
@@ -161,7 +162,7 @@ export function serviceJsonFromEnrichedRow(row: EnrichedServiceRow): ServiceJson
     price_cents: row.price_cents,
     location: row.location,
     rating,
-    image_url: row.image_url ?? "",
+    image_url: effectiveServiceImageUrl(row.image_url),
     created_at: toIsoTimestamp(row.created_at),
     latitude: Number(row.latitude),
     longitude: Number(row.longitude),

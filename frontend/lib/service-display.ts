@@ -1,10 +1,8 @@
-import {
-  inferServiceCategory,
-  localCategoryImage,
-  type ServiceCategoryId,
-} from "@/lib/service-categories";
 import { backendPublicOrigin } from "@/lib/public-backend";
 import type { ServiceDTO } from "@/lib/types";
+
+/** Shown when the listing owner did not upload a photo. */
+export const DEFAULT_SERVICE_IMAGE_PATH = "/images/services/default.png";
 
 export function formatServicePrice(priceCents: number): string {
   const euros = priceCents / 100;
@@ -21,28 +19,31 @@ export function formatServiceRating(rating: number | null): string | null {
   return rating.toFixed(2);
 }
 
-/** Resolves DB image_url to a browser-loadable URL. */
+export function isUserUploadedServiceImage(imageUrl: string): boolean {
+  return imageUrl.trim().startsWith("/uploads/services/");
+}
+
+/** Resolves stored image_url to a browser-loadable URL. */
 export function resolveServiceImageUrl(imageUrl: string | null | undefined): string {
   const value = imageUrl?.trim() ?? "";
-  if (!value) {
-    return localCategoryImage("all");
+
+  if (isUserUploadedServiceImage(value)) {
+    return `${backendPublicOrigin()}${value}`;
   }
+
   if (value.startsWith("http://") || value.startsWith("https://")) {
     return value;
   }
-  if (value.startsWith("/uploads/")) {
-    return `${backendPublicOrigin()}${value}`;
+
+  if (value.startsWith("/images/services/")) {
+    return value;
   }
-  return value;
+
+  return DEFAULT_SERVICE_IMAGE_PATH;
 }
 
 export function serviceCardImageUrl(service: ServiceDTO): string {
-  if (service.image_url?.trim()) {
-    return resolveServiceImageUrl(service.image_url);
-  }
-  const category = inferServiceCategory(service);
-  const categoryId: ServiceCategoryId = category ?? "all";
-  return localCategoryImage(categoryId);
+  return resolveServiceImageUrl(service.image_url);
 }
 
 export function serviceDisplayLocation(service: ServiceDTO): string {

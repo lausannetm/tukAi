@@ -656,3 +656,8 @@ a:hover {
   border-radius: 0.75rem;
   border: 1px solid var(--surface-border);
 }
+
+.create-service-form__preview--default {
+  object-fit: contain;
+  background: var(--surface-100);
+}

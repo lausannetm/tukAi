@@ -11,6 +11,23 @@ const ALLOWED_MIME = new Map<string, string>([
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
+/** Shown when the listing owner did not upload a photo via POST /services/upload. */
+export const DEFAULT_SERVICE_IMAGE_PATH = "/images/services/default.png";
+
+export function isUserUploadedServiceImage(imageUrl: string): boolean {
+  return imageUrl.trim().startsWith("/uploads/services/");
+}
+
+export function effectiveServiceImageUrl(
+  imageUrl: string | null | undefined,
+): string {
+  const value = imageUrl?.trim() ?? "";
+  if (isUserUploadedServiceImage(value)) {
+    return value;
+  }
+  return DEFAULT_SERVICE_IMAGE_PATH;
+}
+
 export function serviceUploadsDir(): string {
   const configured = process.env.SERVICE_UPLOADS_DIR?.trim();
   if (configured) {
@@ -31,6 +48,9 @@ export function isSafeServiceImageFilename(filename: string): boolean {
 
 export function isAllowedServiceImageUrl(imageUrl: string): boolean {
   const value = imageUrl.trim();
+  if (value === DEFAULT_SERVICE_IMAGE_PATH) {
+    return true;
+  }
   if (value.startsWith("/uploads/services/")) {
     const filename = value.slice("/uploads/services/".length);
     return isSafeServiceImageFilename(filename);

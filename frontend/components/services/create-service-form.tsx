@@ -9,6 +9,7 @@ import { Message } from "primereact/message";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { createService, uploadServiceImage } from "@/lib/api";
 import { readStoredUser } from "@/lib/auth-storage";
+import { DEFAULT_SERVICE_IMAGE_PATH } from "@/lib/service-display";
 
 const SOFIA_LAT = 42.6977;
 const SOFIA_LNG = 23.3219;
@@ -56,9 +57,8 @@ export function CreateServiceForm(): JSX.Element {
       description.trim().length > 0 &&
       location.trim().length > 0 &&
       priceEur !== null &&
-      priceEur >= 0 &&
-      imageFile !== null,
-    [userId, name, description, location, priceEur, imageFile],
+      priceEur >= 0,
+    [userId, name, description, location, priceEur],
   );
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
@@ -66,14 +66,18 @@ export function CreateServiceForm(): JSX.Element {
     setError(null);
     setSuccess(null);
 
-    if (!imageFile || priceEur === null) {
-      setError("Please add a photo and price for your service.");
+    if (priceEur === null) {
+      setError("Please set a price for your service.");
       return;
     }
 
     startTransition(async () => {
       try {
-        const { image_url } = await uploadServiceImage(imageFile);
+        let imageUrl: string | undefined;
+        if (imageFile) {
+          const uploaded = await uploadServiceImage(imageFile);
+          imageUrl = uploaded.image_url;
+        }
         const priceCents = Math.round(priceEur * 100);
         const created = await createService({
           userId: userId.trim(),
@@ -83,7 +87,7 @@ export function CreateServiceForm(): JSX.Element {
           priceCents,
           latitude,
           longitude,
-          imageUrl: image_url,
+          imageUrl,
           rating: rating ?? undefined,
         });
         setSuccess(`"${created.name}" was listed successfully.`);
@@ -109,8 +113,13 @@ export function CreateServiceForm(): JSX.Element {
 
       <div className="create-service-form__image-field flex flex-column gap-2">
         <label htmlFor="service-image" className="font-semibold text-color">
-          Service photo <span className="text-red-500">*</span>
+          Service photo{" "}
+          <span className="text-color-secondary font-normal">(optional)</span>
         </label>
+        <p className="text-color-secondary text-sm m-0">
+          If you skip a photo, the default service image will be shown in the
+          catalog.
+        </p>
         <input
           id="service-image"
           type="file"
@@ -127,7 +136,13 @@ export function CreateServiceForm(): JSX.Element {
             alt=""
             className="create-service-form__preview"
           />
-        ) : null}
+        ) : (
+          <img
+            src={DEFAULT_SERVICE_IMAGE_PATH}
+            alt=""
+            className="create-service-form__preview create-service-form__preview--default"
+          />
+        )}
       </div>
 
       <span className="p-float-label">

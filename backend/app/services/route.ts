@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { isAllowedServiceImageUrl } from "@/lib/service-image-storage";
+import {
+  DEFAULT_SERVICE_IMAGE_PATH,
+  isAllowedServiceImageUrl,
+} from "@/lib/service-image-storage";
 import {
   queryEnrichedServices,
   serviceJsonFromEnrichedRow,
@@ -114,16 +117,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         { status: 400 }
       );
     }
-    if (!image_url) {
-      return NextResponse.json(
-        {
-          error:
-            "image_url is required. Upload an image via POST /services/upload first.",
-        },
-        { status: 400 }
-      );
-    }
-    if (!isAllowedServiceImageUrl(image_url)) {
+    const storedImageUrl = image_url || DEFAULT_SERVICE_IMAGE_PATH;
+
+    if (!isAllowedServiceImageUrl(storedImageUrl)) {
       return NextResponse.json(
         {
           error:
@@ -202,7 +198,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         price_cents,
         location,
         listingRating,
-        image_url,
+        storedImageUrl,
         latitude,
         longitude,
       ]

@@ -1,3 +1,4 @@
+import { resolveServiceImageUrl } from "@/lib/service-display";
 import type { OrderDTO, ServiceDTO } from "@/lib/types";
 
 export type CreateServicePayload = {
@@ -8,7 +9,7 @@ export type CreateServicePayload = {
   priceCents: number;
   latitude: number;
   longitude: number;
-  imageUrl: string;
+  imageUrl?: string;
   rating?: number;
 };
 
@@ -47,7 +48,7 @@ function normalizeServiceDto(row: ServiceDTO): ServiceDTO {
     description: row.description ?? "",
     location: row.location ?? "",
     rating,
-    image_url: row.image_url?.trim() ?? "",
+    image_url: resolveServiceImageUrl(row.image_url),
   };
 }
 
