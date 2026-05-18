@@ -71,7 +71,9 @@ export function HeroSearchBar(): JSX.Element {
   async function onSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
     const q = query.trim();
-    const href = q ? `/catalog?q=${encodeURIComponent(q)}` : "/catalog";
+    const href = q
+      ? `/catalog/all?q=${encodeURIComponent(q)}`
+      : "/catalog";
     setFeedback(null);
 
     if (!q) {

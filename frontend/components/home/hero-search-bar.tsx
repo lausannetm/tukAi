@@ -1,15 +1,49 @@
 "use client";
 
-import { Button } from "primereact/button";
-import { IconField } from "primereact/iconfield";
-import { InputIcon } from "primereact/inputicon";
-import { InputText } from "primereact/inputtext";
+import Link from "next/link";
 import { Message } from "primereact/message";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { readStoredUser } from "@/lib/auth-storage";
+import type { UserPublicDTO } from "@/lib/auth-types";
+import {
+  categoryCatalogPath,
+  type ServiceCategoryId,
+} from "@/lib/service-categories";
 import type { AiServiceSuggestResponse } from "@/lib/types";
 
 const AI_SUGGESTION_STORAGE_KEY = "aiSearchSuggestion";
+
+type QuickAction = {
+  label: string;
+  icon: string;
+  href?: string;
+  query?: string;
+  categoryId?: ServiceCategoryId;
+};
+
+const QUICK_ACTIONS: QuickAction[] = [
+  {
+    label: "Browse all categories",
+    icon: "pi pi-th-large",
+    href: "/catalog/all",
+  },
+  {
+    label: "Renovation",
+    icon: "pi pi-wrench",
+    categoryId: "renovation",
+  },
+  {
+    label: "Photography",
+    icon: "pi pi-camera",
+    categoryId: "photography",
+  },
+  {
+    label: "Hire a chef",
+    icon: "pi pi-user",
+    query: "personal chef",
+  },
+];
 
 function readSuggestResponse(data: unknown): AiServiceSuggestResponse | null {
   if (typeof data !== "object" || data === null) {
@@ -38,6 +72,15 @@ function readSuggestResponse(data: unknown): AiServiceSuggestResponse | null {
   };
 }
 
+function firstNameFromUser(user: UserPublicDTO): string {
+  const fromName = user.full_name?.trim().split(/\s+/)[0];
+  if (fromName) {
+    return fromName;
+  }
+  const local = user.email.split("@")[0]?.trim();
+  return local && local.length > 0 ? local : "there";
+}
+
 async function getBrowserCoordinates(): Promise<{
   latitude: number;
   longitude: number;
@@ -54,7 +97,7 @@ async function getBrowserCoordinates(): Promise<{
         });
       },
       () => resolve(null),
-      { enableHighAccuracy: false, timeout: 10_000, maximumAge: 300_000 }
+      { enableHighAccuracy: false, timeout: 10_000, maximumAge: 300_000 },
     );
   });
 }
@@ -63,15 +106,24 @@ export function HeroSearchBar(): JSX.Element {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
+  const [storedUser, setStoredUser] = useState<UserPublicDTO | null>(null);
   const [feedback, setFeedback] = useState<{
     severity: "error" | "info" | "warn";
     text: string;
   } | null>(null);
 
-  async function onSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
-    e.preventDefault();
-    const q = query.trim();
-    const href = q ? `/catalog?q=${encodeURIComponent(q)}` : "/catalog";
+  useEffect(() => {
+    setStoredUser(readStoredUser());
+  }, []);
+
+  const greetingName = storedUser ? firstNameFromUser(storedUser) : null;
+
+  async function runSearch(searchQuery: string): Promise<void> {
+    const q = searchQuery.trim();
+    const href = q
+      ? `/catalog/all?q=${encodeURIComponent(q)}`
+      : "/catalog";
+
     setFeedback(null);
 
     if (!q) {
@@ -142,13 +194,13 @@ export function HeroSearchBar(): JSX.Element {
             JSON.stringify({
               serviceId: parsed.service.id,
               reason: parsed.reason,
-            })
+            }),
           );
         } catch {
           /* private mode or quota */
         }
         router.push(
-          `${href}${href.includes("?") ? "&" : "?"}suggested=${encodeURIComponent(parsed.service.id)}`
+          `${href}${href.includes("?") ? "&" : "?"}suggested=${encodeURIComponent(parsed.service.id)}`,
         );
         return;
       }
@@ -165,71 +217,114 @@ export function HeroSearchBar(): JSX.Element {
     }
   }
 
+  async function onSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
+    e.preventDefault();
+    await runSearch(query);
+  }
+
+  function onQuickAction(action: QuickAction): void {
+    if (action.href) {
+      router.push(action.href);
+      return;
+    }
+    if (action.categoryId) {
+      router.push(categoryCatalogPath(action.categoryId));
+      return;
+    }
+    if (action.query) {
+      setQuery(action.query);
+      void runSearch(action.query);
+    }
+  }
+
   return (
     <section
       className="home-hero-search w-full px-4"
       aria-labelledby="home-hero-heading"
     >
-      <h1 id="home-hero-heading" className="sr-only">
-        Search AI services
-      </h1>
-      <form
-        onSubmit={(ev) => {
-          void onSubmit(ev);
-        }}
-        className="w-full flex justify-content-center"
-        role="search"
-      >
-        <div
-          className="home-hero-search__card surface-card border-round-2xl p-3 sm:p-4 shadow-4 w-full"
-          style={{ maxWidth: "36rem" }}
+      <div className="home-hero-search__content">
+        <Link href="/" className="home-hero-brand no-underline" aria-label="TukAI home">
+          <img
+            src="/images/logo.png"
+            alt=""
+            width={48}
+            height={45}
+            className="home-hero-brand__logo"
+            decoding="async"
+          />
+        </Link>
+
+        <h1 id="home-hero-heading" className="home-hero-greeting">
+          {greetingName
+            ? `Hey, ${greetingName}. Ready to find a service?`
+            : "What service are you looking for?"}
+        </h1>
+        <p className="home-hero-subtitle">
+          Describe what you need — AI will match you with the right provider.
+        </p>
+
+        <form
+          onSubmit={(ev) => {
+            void onSubmit(ev);
+          }}
+          className="home-hero-form w-full"
+          role="search"
         >
+          <div className="home-hero-search-pill-wrap">
+            <div
+              className={`home-hero-search-pill${busy ? " home-hero-search-pill--busy" : ""}`}
+            >
+              <i className="pi pi-search home-hero-search-pill__icon" aria-hidden />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search services…"
+                className="home-hero-search-pill__input"
+                aria-label="Search catalog"
+                autoComplete="off"
+                name="q"
+                disabled={busy}
+              />
+              <button
+                type="submit"
+                className="home-hero-search-pill__submit"
+                disabled={busy}
+                aria-label="Search"
+              >
+                <i
+                  className={`pi ${busy ? "pi-spin pi-spinner" : "pi-arrow-right"}`}
+                  aria-hidden
+                />
+              </button>
+            </div>
+          </div>
+
           {feedback ? (
             <Message
               severity={feedback.severity}
               text={feedback.text}
-              className="mb-3 w-full border-round-lg"
+              className="home-hero-feedback w-full border-round-lg"
             />
           ) : null}
-          <IconField iconPosition="left" className="w-full flex">
-            <InputIcon className="pi pi-search text-color-secondary" />
-            <InputText
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search services…"
-              className="w-full border-round-xl text-base md:text-lg py-3 pl-6"
-              aria-label="Search catalog"
-              autoComplete="off"
-              name="q"
-              disabled={busy}
-            />
-          </IconField>
-          <p className="text-color-secondary text-sm m-0 mt-2 line-height-3">
-            Search uses ChatGPT with your browser location (if you allow it)
-            to recommend a highly rated nearby service when possible.
-          </p>
-          <div className="flex gap-2 mt-3 flex-wrap">
-            <Button
-              type="submit"
-              label="Search catalog"
-              icon="pi pi-arrow-right"
-              iconPos="right"
-              className="border-round-lg flex-auto sm:flex-grow-0"
-              loading={busy}
-              disabled={busy}
-            />
-            <Button
-              type="button"
-              label="Browse all"
-              severity="secondary"
-              outlined
-              className="border-round-lg flex-auto sm:flex-grow-0"
-              disabled={busy}
-              onClick={() => router.push("/catalog")}
-            />
+
+          <div className="home-hero-chips" role="list">
+            {QUICK_ACTIONS.map((action) => (
+              <button
+                key={action.label}
+                type="button"
+                className="home-hero-chip"
+                disabled={busy}
+                onClick={() => onQuickAction(action)}
+                role="listitem"
+              >
+                <i className={action.icon} aria-hidden />
+                <span>{action.label}</span>
+              </button>
+            ))}
           </div>
-        </div>
-      </form>
+        </form>
+      </div>
     </section>
   );
 }

@@ -65,17 +65,15 @@ export function SiteHeader(): JSX.Element {
           className="flex align-items-center gap-2 no-underline text-color font-bold text-xl"
           onClick={closeMenu}
         >
-          <span
-            className="inline-flex align-items-center justify-content-center border-circle w-2rem h-2rem text-white"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--primary-color), #7c3aed)",
-            }}
-            aria-hidden
-          >
-            U
-          </span>
-          <span>UglugAI</span>
+          <img
+            src="/images/logo.png"
+            alt=""
+            width={32}
+            height={30}
+            className="site-header-logo"
+            decoding="async"
+          />
+          <span>TukAI</span>
         </Link>
 
         <nav

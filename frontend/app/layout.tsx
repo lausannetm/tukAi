@@ -8,8 +8,12 @@ import "./globals.css";
 import { PrimeProviders } from "@/components/prime-providers";
 
 export const metadata: Metadata = {
-  title: "AI Services",
+  title: "TukAI - your local service provider",
   description: "Browse services and place orders",
+  icons: {
+    icon: [{ url: "/images/logo.png", type: "image/png" }],
+    apple: "/images/logo.png",
+  },
 };
 
 export default function RootLayout(props: {
