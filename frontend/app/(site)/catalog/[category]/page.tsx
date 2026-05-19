@@ -19,7 +19,7 @@ export async function generateMetadata(
   const { category } = await props.params;
   const meta = getCategoryBySlug(category);
   return {
-    title: meta?.label ?? "Catalog",
+    title: meta?.label ?? "Book a service",
     description: meta ? `${meta.label} services` : "Browse services",
   };
 }

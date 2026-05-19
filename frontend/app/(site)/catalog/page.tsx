@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { CatalogCategoriesView } from "@/components/catalog/catalog-categories-view";
 
 export const metadata: Metadata = {
-  title: "Catalog",
+  title: "Book a service",
   description: "Browse service categories",
 };
 

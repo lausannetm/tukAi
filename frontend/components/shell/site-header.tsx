@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { SiteHeaderUserMenu } from "@/components/shell/site-header-user-menu";
 import { clearAuthSession, readStoredUser } from "@/lib/auth-storage";
 import type { UserPublicDTO } from "@/lib/auth-types";
 
@@ -10,9 +11,7 @@ type NavItem = { href: string; label: string };
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Home" },
-  { href: "/catalog", label: "Catalog" },
-  { href: "/list-service", label: "List service" },
-  { href: "/order", label: "Order" },
+  { href: "/catalog", label: "Book a service" },
 ];
 
 function isActivePath(pathname: string, href: string): boolean {
@@ -20,6 +19,17 @@ function isActivePath(pathname: string, href: string): boolean {
     return pathname === "/";
   }
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function siteHeaderNavLinkClass(active: boolean, mobile = false): string {
+  return [
+    "site-header-nav-link",
+    "no-underline",
+    mobile ? "site-header-nav-link--mobile" : "",
+    active ? "site-header-nav-link--active" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 export function SiteHeader(): JSX.Element {
@@ -87,51 +97,27 @@ export function SiteHeader(): JSX.Element {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`px-3 py-2 border-round no-underline text-sm font-medium transition-colors transition-duration-150 ${
-                  active
-                    ? "bg-primary text-primary-contrast"
-                    : "text-color hover:surface-hover"
-                }`}
+                className={siteHeaderNavLinkClass(active)}
               >
                 {item.label}
               </Link>
             );
           })}
           {storedUser ? (
-            <>
-              <span
-                className="px-2 text-sm text-color-secondary max-w-12rem white-space-nowrap overflow-hidden text-overflow-ellipsis"
-                title={storedUser.email}
-              >
-                {storedUser.email}
-              </span>
-              <button
-                type="button"
-                className="px-3 py-2 border-round text-sm font-medium border-none surface-ground cursor-pointer text-color hover:surface-hover"
-                onClick={handleLogout}
-              >
-                Log out
-              </button>
-            </>
+            <SiteHeaderUserMenu user={storedUser} onLogout={handleLogout} />
           ) : (
             <>
               <Link
                 href="/login"
-                className={`px-3 py-2 border-round no-underline text-sm font-medium transition-colors transition-duration-150 ${
-                  isActivePath(pathname, "/login")
-                    ? "bg-primary text-primary-contrast"
-                    : "text-color hover:surface-hover"
-                }`}
+                className={siteHeaderNavLinkClass(isActivePath(pathname, "/login"))}
               >
                 Log in
               </Link>
               <Link
                 href="/register"
-                className={`px-3 py-2 border-round no-underline text-sm font-medium transition-colors transition-duration-150 ${
-                  isActivePath(pathname, "/register")
-                    ? "bg-primary text-primary-contrast"
-                    : "text-color hover:surface-hover"
-                }`}
+                className={siteHeaderNavLinkClass(
+                  isActivePath(pathname, "/register"),
+                )}
               >
                 Register
               </Link>
@@ -166,11 +152,7 @@ export function SiteHeader(): JSX.Element {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`px-3 py-3 border-round no-underline font-medium ${
-                    active
-                      ? "bg-primary text-primary-contrast"
-                      : "text-color hover:surface-hover"
-                  }`}
+                  className={siteHeaderNavLinkClass(active, true)}
                   onClick={closeMenu}
                 >
                   {item.label}
@@ -178,38 +160,30 @@ export function SiteHeader(): JSX.Element {
               );
             })}
             {storedUser ? (
-              <>
-                <span className="px-3 py-2 text-sm text-color-secondary">
-                  {storedUser.email}
-                </span>
-                <button
-                  type="button"
-                  className="px-3 py-3 border-round text-left font-medium border-none surface-ground cursor-pointer text-color hover:surface-hover"
-                  onClick={handleLogout}
-                >
-                  Log out
-                </button>
-              </>
+              <SiteHeaderUserMenu
+                user={storedUser}
+                onLogout={handleLogout}
+                onNavigate={closeMenu}
+                mobile
+              />
             ) : (
               <>
                 <Link
                   href="/login"
-                  className={`px-3 py-3 border-round no-underline font-medium ${
-                    isActivePath(pathname, "/login")
-                      ? "bg-primary text-primary-contrast"
-                      : "text-color hover:surface-hover"
-                  }`}
+                  className={siteHeaderNavLinkClass(
+                    isActivePath(pathname, "/login"),
+                    true,
+                  )}
                   onClick={closeMenu}
                 >
                   Log in
                 </Link>
                 <Link
                   href="/register"
-                  className={`px-3 py-3 border-round no-underline font-medium ${
-                    isActivePath(pathname, "/register")
-                      ? "bg-primary text-primary-contrast"
-                      : "text-color hover:surface-hover"
-                  }`}
+                  className={siteHeaderNavLinkClass(
+                    isActivePath(pathname, "/register"),
+                    true,
+                  )}
                   onClick={closeMenu}
                 >
                   Register
