@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import { verifyAccessToken } from "@/lib/auth-jwt";
 import {
   findUserPublicById,
-  mapOwnedServiceToJson,
   mapUserPublicToJson,
-  queryOwnedServicesForUser,
 } from "@/lib/auth-user-db";
+import {
+  queryEnrichedServices,
+  serviceJsonFromEnrichedRow,
+} from "@/lib/services-queries";
 import { bearerTokenFromRequest, isUuid } from "@/lib/auth-validation";
 
 export async function GET(request: Request): Promise<NextResponse> {
@@ -45,8 +47,8 @@ export async function GET(request: Request): Promise<NextResponse> {
       );
     }
 
-    const ownedRows = await queryOwnedServicesForUser(userId);
-    const services = ownedRows.map((row) => mapOwnedServiceToJson(row));
+    const ownedRows = await queryEnrichedServices({ providerId: userId });
+    const services = ownedRows.map((row) => serviceJsonFromEnrichedRow(row));
 
     return NextResponse.json({
       user: mapUserPublicToJson(user),

@@ -47,7 +47,10 @@ export function resetServicesListingColumnCache(): void {
   listingColumnsExistenceConfirmed = false;
 }
 
-export async function queryEnrichedServices(): Promise<EnrichedServiceRow[]> {
+export async function queryEnrichedServices(options?: {
+  providerId?: string;
+}): Promise<EnrichedServiceRow[]> {
+  const providerId = options?.providerId?.trim();
   const hasListing = await servicesTableHasListingColumns();
 
   const reviewAgg = `(
@@ -64,6 +67,9 @@ export async function queryEnrichedServices(): Promise<EnrichedServiceRow[]> {
      pu.email,
      pu.id::text
    ) AS provider_label`;
+
+  const providerFilter = providerId ? `WHERE s.provider_id = $1::uuid` : "";
+  const params = providerId ? [providerId] : [];
 
   if (hasListing) {
     return query<EnrichedServiceRow>(
@@ -85,7 +91,9 @@ export async function queryEnrichedServices(): Promise<EnrichedServiceRow[]> {
        FROM services s
        INNER JOIN users pu ON pu.id = s.provider_id
        LEFT JOIN ${reviewAgg} ON stats.service_id = s.id
-       ORDER BY s.created_at ASC`
+       ${providerFilter}
+       ORDER BY s.created_at ASC`,
+      params
     );
   }
 
@@ -108,7 +116,9 @@ export async function queryEnrichedServices(): Promise<EnrichedServiceRow[]> {
      FROM services s
      INNER JOIN users pu ON pu.id = s.provider_id
      LEFT JOIN ${reviewAgg} ON stats.service_id = s.id
-     ORDER BY s.created_at ASC`
+     ${providerFilter}
+     ORDER BY s.created_at ASC`,
+    params
   );
 }
 

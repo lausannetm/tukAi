@@ -357,7 +357,7 @@ export const openApiDocument: Record<string, unknown> = {
         security: [{ bearerAuth: [] }],
         responses: {
           "200": {
-            description: "Profile and services where owner_user_id matches",
+            description: "Profile and services where provider_id matches the JWT subject",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/MeResponse" },

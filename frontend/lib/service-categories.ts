@@ -31,6 +31,12 @@ export function serviceCatalogPath(
   return `/catalog/${categoryId}/${serviceId}`;
 }
 
+/** Catalog detail URL using the service’s inferred category (falls back to “all”). */
+export function serviceDetailCatalogPath(service: ServiceDTO): string {
+  const categoryId = inferServiceCategory(service) ?? "all";
+  return serviceCatalogPath(categoryId, service.id);
+}
+
 export const CATALOG_CATEGORIES: CatalogCategory[] = [
   { id: "all", label: "All", imageUrl: localCategoryImage("all") },
   {

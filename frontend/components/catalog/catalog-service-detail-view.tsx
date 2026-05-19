@@ -2,12 +2,16 @@
 
 import Link from "next/link";
 import { Button } from "primereact/button";
+import { Message } from "primereact/message";
+import { useEffect, useState } from "react";
+import { readStoredUser } from "@/lib/auth-storage";
 import {
   formatServicePrice,
   formatServiceRating,
   serviceCardImageUrl,
   serviceDisplayLocation,
 } from "@/lib/service-display";
+import { isServiceListedByUser } from "@/lib/service-ownership";
 import {
   categoryCatalogPath,
   getCategoryBySlug,
@@ -22,6 +26,14 @@ export function CatalogServiceDetailView(props: {
   const category = getCategoryBySlug(props.categoryId);
   const ratingLabel = formatServiceRating(props.service.rating);
   const orderHref = `/order?serviceId=${encodeURIComponent(props.service.id)}`;
+  const [viewerUserId, setViewerUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const user = readStoredUser();
+    setViewerUserId(user?.id ?? null);
+  }, []);
+
+  const isOwnListing = isServiceListedByUser(props.service, viewerUserId);
 
   return (
     <div className="flex-grow-1 surface-ground">
@@ -70,9 +82,17 @@ export function CatalogServiceDetailView(props: {
               <p className="catalog-service-detail__description">
                 {props.service.description}
               </p>
-              <Link href={orderHref} className="no-underline catalog-service-detail__cta-link">
-                <Button label="Place an order" className="catalog-service-detail__cta" />
-              </Link>
+              {isOwnListing ? (
+                <Message
+                  severity="info"
+                  text="This is your listing. You cannot place an order on your own service."
+                  className="w-full border-round-lg catalog-service-detail__own-listing"
+                />
+              ) : (
+                <Link href={orderHref} className="no-underline catalog-service-detail__cta-link">
+                  <Button label="Place an order" className="catalog-service-detail__cta" />
+                </Link>
+              )}
             </div>
           </article>
         </div>

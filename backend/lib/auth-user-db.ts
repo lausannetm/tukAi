@@ -90,68 +90,6 @@ export async function findUserPublicById(
   return rows[0] ?? null;
 }
 
-export type OwnedServiceRow = {
-  id: string;
-  name: string;
-  description: string | null;
-  price_cents: number;
-  created_at: Date | string;
-  latitude: number;
-  longitude: number;
-  avg_rating: string | null;
-  review_count: string;
-};
-
-export async function queryOwnedServicesForUser(
-  ownerUserId: string
-): Promise<OwnedServiceRow[]> {
-  return query<OwnedServiceRow>(
-    `SELECT
-       s.id,
-       s.name,
-       s.description,
-       s.price_cents,
-       s.created_at,
-       s.latitude,
-       s.longitude,
-       ROUND(AVG(r.rating)::numeric, 2)::text AS avg_rating,
-       COUNT(r.id)::text AS review_count
-     FROM services s
-     LEFT JOIN reviews r ON r.service_id = s.id
-     WHERE s.owner_user_id = $1::uuid
-     GROUP BY s.id
-     ORDER BY s.created_at ASC`,
-    [ownerUserId]
-  );
-}
-
-export function mapOwnedServiceToJson(row: OwnedServiceRow): {
-  id: string;
-  name: string;
-  description: string | null;
-  price_cents: number;
-  created_at: string;
-  latitude: number;
-  longitude: number;
-  avg_rating: number | null;
-  review_count: number;
-} {
-  return {
-    id: row.id,
-    name: row.name,
-    description: row.description,
-    price_cents: row.price_cents,
-    created_at: toIsoTimestamp(row.created_at),
-    latitude: Number(row.latitude),
-    longitude: Number(row.longitude),
-    avg_rating:
-      row.avg_rating !== null && row.avg_rating !== ""
-        ? Number.parseFloat(row.avg_rating)
-        : null,
-    review_count: Number.parseInt(row.review_count, 10),
-  };
-}
-
 export function mapUserPublicToJson(row: UserPublicRow): {
   id: string;
   email: string;

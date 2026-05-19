@@ -43,7 +43,7 @@ export async function fetchServices(): Promise<ServiceDTO[]> {
   return rows.map(normalizeServiceDto);
 }
 
-function normalizeServiceDto(row: ServiceDTO): ServiceDTO {
+export function normalizeServiceDto(row: ServiceDTO): ServiceDTO {
   const userId = row.user_id ?? row.provider_id ?? "";
   const rating =
     row.rating ??

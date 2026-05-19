@@ -829,6 +829,27 @@ a:hover {
   display: inline-block;
 }
 
+.catalog-service-detail__own-listing {
+  margin: 0;
+}
+
+.my-services-card {
+  display: flex;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.my-services-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.my-services-card:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
 .create-service-form__file-input {
   width: 100%;
   max-width: 24rem;

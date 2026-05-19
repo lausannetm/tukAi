@@ -1,3 +1,4 @@
+import { normalizeServiceDto } from "@/lib/api";
 import type {
   AuthMeResponse,
   AuthTokenResponse,
@@ -5,6 +6,7 @@ import type {
   RegisterResponse,
   UserPublicDTO,
 } from "@/lib/auth-types";
+import type { ServiceDTO } from "@/lib/types";
 import { backendPublicOrigin } from "@/lib/public-backend";
 
 /**
@@ -103,7 +105,17 @@ export async function fetchAuthMe(token: string): Promise<
       error: errorMessage(body, `Could not load profile (${response.status})`),
     };
   }
-  return { ok: true, data: body as AuthMeResponse };
+  const raw = body as AuthMeResponse;
+  const services = Array.isArray(raw.services)
+    ? raw.services.map((row) => normalizeServiceDto(row as ServiceDTO))
+    : [];
+  return {
+    ok: true,
+    data: {
+      user: raw.user,
+      services,
+    },
+  };
 }
 
 export async function getConfirmEmail(

@@ -8,6 +8,7 @@ import { InputNumber } from "primereact/inputnumber";
 import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
 import { readStoredUser } from "@/lib/auth-storage";
+import { isServiceListedByUser } from "@/lib/service-ownership";
 import type { SubmitOrderFn } from "@/lib/submit-order-fn";
 import type { ServiceDTO } from "@/lib/types";
 
@@ -39,13 +40,7 @@ export function OrderForm(props: {
     if (!uid) {
       return props.services;
     }
-    return props.services.filter((s) => {
-      const pid = s.provider_id?.trim().toLowerCase();
-      if (!pid) {
-        return true;
-      }
-      return pid !== uid;
-    });
+    return props.services.filter((s) => !isServiceListedByUser(s, uid));
   }, [props.services, userId]);
 
   const options: ServiceOption[] = useMemo(
