@@ -23,6 +23,13 @@ export function isUserUploadedServiceImage(imageUrl: string): boolean {
   return imageUrl.trim().startsWith("/uploads/services/");
 }
 
+function isCatalogStaticServiceImage(imageUrl: string): boolean {
+  const value = imageUrl.trim();
+  return (
+    value.startsWith("/images/services/") && value !== DEFAULT_SERVICE_IMAGE_PATH
+  );
+}
+
 /** Resolves stored image_url to a browser-loadable URL. */
 export function resolveServiceImageUrl(imageUrl: string | null | undefined): string {
   const value = imageUrl?.trim() ?? "";
@@ -35,7 +42,7 @@ export function resolveServiceImageUrl(imageUrl: string | null | undefined): str
     return value;
   }
 
-  if (value.startsWith("/images/services/")) {
+  if (isCatalogStaticServiceImage(value) || value === DEFAULT_SERVICE_IMAGE_PATH) {
     return value;
   }
 

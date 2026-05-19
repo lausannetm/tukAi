@@ -125,9 +125,9 @@ VALUES (
 
 INSERT INTO services (id, provider_id, name, description, price_cents, location, rating, image_url, latitude, longitude)
 VALUES
-    ('22222222-2222-4222-8222-222222222221'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Vision API', 'Image classification bundle. Category: it.', 4999, 'Sofia, Bulgaria', 4.85, '/images/services/default.png', 42.6977, 23.3219),
-    ('22222222-2222-4222-8222-222222222222'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Text API', 'LLM completions per token. Category: it.', 1999, 'Sofia, Bulgaria', NULL, '/images/services/default.png', 42.6745, 23.3542),
-    ('22222222-2222-4222-8222-222222222223'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Speech API', 'Transcription pipeline. Category: it.', 3499, 'Sofia, Bulgaria', NULL, '/images/services/default.png', 42.7156, 23.2791);
+    ('22222222-2222-4222-8222-222222222221'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Vision API', 'Image classification bundle. Category: it', 4999, 'Sofia, Bulgaria', 4.85, '/images/services/default.png', 42.6977, 23.3219),
+    ('22222222-2222-4222-8222-222222222222'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Text API', 'LLM completions per token. Category: it', 1999, 'Sofia, Bulgaria', NULL, '/images/services/default.png', 42.6745, 23.3542),
+    ('22222222-2222-4222-8222-222222222223'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Speech API', 'Transcription pipeline. Category: it', 3499, 'Sofia, Bulgaria', NULL, '/images/services/it-speechapi.webp', 42.7156, 23.2791);
 
 INSERT INTO reviews (user_id, service_id, rating, comment)
 VALUES
@@ -159,11 +159,11 @@ VALUES
         '44444444-4444-4444-8444-444444444401'::uuid,
         'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid,
         'Plaster',
-        'Plasterer for applying plaster—best plasterer in the whole town. Category: construction and renovation work. Price: 14 EUR per sq.m.',
+        'Plasterer for applying plaster—best plasterer in the whole town. Category: construction and renovation work, 14 EUR per sq.m.',
         1400,
         'Sofia, Bulgaria',
         NULL,
-        '/images/services/default.png',
+        '/images/services/plaster-service.jpeg',
         42.6977,
         23.3219
     ),
@@ -171,11 +171,11 @@ VALUES
         '44444444-4444-4444-8444-444444444402'::uuid,
         'cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid,
         'Photographer',
-        'Photography for your very special personal event. Category: photography. Price: 50 EUR per hour.',
+        'Photography for your very special personal event. Category: photography, 50 EUR per hour',
         5000,
         'Burgas, Bulgaria',
         4.90,
-        '/images/services/default.png',
+        '/images/services/photoshoot.jpeg',
         42.5048,
         27.4626
     ),
@@ -183,11 +183,11 @@ VALUES
         '44444444-4444-4444-8444-444444444403'::uuid,
         'dddddddd-dddd-4ddd-8ddd-dddddddddddd'::uuid,
         'Personal chef',
-        'Hire a professional personal chef to cook your favorite meal. Category: chefs. Price: 28 EUR per hour.',
+        'Hire a professional personal chef to cook your favorite meal. Category: chefs, 28 EUR per hour',
         2800,
         'Plovdiv, Bulgaria',
         5.00,
-        '/images/services/default.png',
+        '/images/services/chef.jpg',
         42.1354,
         24.7453
     );

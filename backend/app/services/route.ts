@@ -5,6 +5,10 @@ import {
   isAllowedServiceImageUrl,
 } from "@/lib/service-image-storage";
 import {
+  isServiceCategoryId,
+  type ServiceCategoryId,
+} from "@/lib/service-categories";
+import {
   queryEnrichedServices,
   serviceJsonFromEnrichedRow,
   type EnrichedServiceRow,
@@ -32,10 +36,25 @@ function parseOptionalListingRating(raw: unknown): number | null {
   return Math.round(n * 100) / 100;
 }
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: Request): Promise<NextResponse> {
   try {
+    const categoryParam = new URL(request.url).searchParams
+      .get("category")
+      ?.trim()
+      .toLowerCase();
+
     const rows = await queryEnrichedServices();
-    const body = rows.map(serviceJsonFromEnrichedRow);
+    let body = rows.map(serviceJsonFromEnrichedRow);
+
+    if (
+      categoryParam &&
+      isServiceCategoryId(categoryParam) &&
+      categoryParam !== "all"
+    ) {
+      const categoryId: ServiceCategoryId = categoryParam;
+      body = body.filter((service) => service.category === categoryId);
+    }
+
     return NextResponse.json(body);
   } catch (err) {
     const message =

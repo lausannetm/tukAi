@@ -49,6 +49,7 @@ function normalizeServiceDto(row: ServiceDTO): ServiceDTO {
     location: row.location ?? "",
     rating,
     image_url: resolveServiceImageUrl(row.image_url),
+    category: row.category ?? null,
   };
 }
 

@@ -18,11 +18,18 @@ export function isUserUploadedServiceImage(imageUrl: string): boolean {
   return imageUrl.trim().startsWith("/uploads/services/");
 }
 
+export function isCatalogStaticServiceImage(imageUrl: string): boolean {
+  const value = imageUrl.trim();
+  return (
+    value.startsWith("/images/services/") && value !== DEFAULT_SERVICE_IMAGE_PATH
+  );
+}
+
 export function effectiveServiceImageUrl(
   imageUrl: string | null | undefined,
 ): string {
   const value = imageUrl?.trim() ?? "";
-  if (isUserUploadedServiceImage(value)) {
+  if (isUserUploadedServiceImage(value) || isCatalogStaticServiceImage(value)) {
     return value;
   }
   return DEFAULT_SERVICE_IMAGE_PATH;

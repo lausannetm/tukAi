@@ -81,14 +81,41 @@ export function getCategoryBySlug(
   return CATALOG_CATEGORIES.find((c) => c.id === slug);
 }
 
+/** Reads `Category: …` from a description and strips trailing `.` / price clauses. */
+export function extractCategoryLabel(description: string | null): string | null {
+  const match = (description ?? "").match(/category:\s*([^\n]+)/i);
+  if (!match?.[1]) {
+    return null;
+  }
+
+  let label = match[1].trim().toLowerCase();
+  label = label.replace(/\.\s*price\b.*$/i, "").trim();
+  label = label.replace(/[.,;]+$/, "").trim();
+  return label.length > 0 ? label : null;
+}
+
 export function inferServiceCategory(
-  service: ServiceDTO
+  service: Pick<ServiceDTO, "name" | "description" | "category">
 ): Exclude<ServiceCategoryId, "all"> | null {
+  if (
+    service.category &&
+    isServiceCategoryId(service.category) &&
+    service.category !== "all"
+  ) {
+    return service.category;
+  }
+
   const text = `${service.name} ${service.description ?? ""}`.toLowerCase();
-  const categoryLine = (service.description ?? "").match(
-    /category:\s*([^.\n]+)/i
-  )?.[1];
-  const hint = (categoryLine ?? text).toLowerCase();
+  const categoryLabel = extractCategoryLabel(service.description);
+
+  if (categoryLabel) {
+    const slugToken = categoryLabel.split(/[\s,/]+/)[0] ?? "";
+    if (isServiceCategoryId(slugToken) && slugToken !== "all") {
+      return slugToken;
+    }
+  }
+
+  const hint = (categoryLabel ?? text).toLowerCase();
 
   if (
     hint.includes("renovation") ||
@@ -115,12 +142,13 @@ export function inferServiceCategory(
     return "catering";
   }
   if (
+    hint === "it" ||
+    /\bit\b/.test(hint) ||
     hint.includes("api") ||
     hint.includes("llm") ||
     hint.includes("vision") ||
     hint.includes("speech") ||
-    hint.includes("software") ||
-    hint.includes(" it ")
+    hint.includes("software")
   ) {
     return "it";
   }

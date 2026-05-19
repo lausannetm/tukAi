@@ -62,6 +62,26 @@ export const openApiDocument: Record<string, unknown> = {
         operationId: "listServices",
         summary: "List all services",
         tags: ["Services"],
+        parameters: [
+          {
+            name: "category",
+            in: "query",
+            required: false,
+            schema: {
+              type: "string",
+              enum: [
+                "renovation",
+                "photography",
+                "beauty",
+                "catering",
+                "it",
+                "chefs",
+                "fun",
+              ],
+            },
+            description: "Filter by catalog category slug",
+          },
+        ],
         responses: {
           "200": {
             description: "Array of catalog services",
@@ -502,6 +522,11 @@ export const openApiDocument: Record<string, unknown> = {
           longitude: { type: "number" },
           avg_rating: { type: ["number", "null"] },
           review_count: { type: "integer", minimum: 0 },
+          category: {
+            type: ["string", "null"],
+            description:
+              "Catalog category slug inferred from description (e.g. it, renovation)",
+          },
         },
       },
       CreateServiceBody: {

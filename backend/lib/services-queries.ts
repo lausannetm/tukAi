@@ -1,5 +1,6 @@
 import { query } from "@/lib/db";
 import { effectiveServiceImageUrl } from "@/lib/service-image-storage";
+import { inferServiceCategory } from "@/lib/service-categories";
 import { toIsoTimestamp } from "@/lib/iso-timestamp";
 
 export type EnrichedServiceRow = {
@@ -127,6 +128,7 @@ export type ServiceJsonBody = {
   longitude: number;
   avg_rating: number | null;
   review_count: number;
+  category: string | null;
 };
 
 function parseOptionalRating(value: string | null): number | null {
@@ -168,5 +170,9 @@ export function serviceJsonFromEnrichedRow(row: EnrichedServiceRow): ServiceJson
     longitude: Number(row.longitude),
     avg_rating: avgRating,
     review_count: Number.parseInt(row.review_count, 10),
+    category: inferServiceCategory({
+      name: row.name,
+      description: row.description,
+    }),
   };
 }

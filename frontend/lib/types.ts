@@ -17,6 +17,8 @@ export type ServiceDTO = {
   longitude: number;
   avg_rating: number | null;
   review_count: number;
+  /** Catalog category slug from the API (parsed from description). */
+  category?: string | null;
 };
 
 export type AiServiceSuggestResponse = {
