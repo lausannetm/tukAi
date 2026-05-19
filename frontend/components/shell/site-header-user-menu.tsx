@@ -2,10 +2,10 @@
 
 import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
+import { faUser } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 config.autoAddCss = false;
-import { faUser } from "@fortawesome/free-solid-svg-icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
@@ -30,12 +30,24 @@ const USER_MENU_ITEMS: UserMenuItem[] = [
   { type: "action", label: "Log out", action: "logout" },
 ];
 
+const USER_SECTION_PATHS = ["/list-service", "/my-services", "/used-services"];
+
+function isUserSectionActive(pathname: string, menuOpen: boolean): boolean {
+  if (menuOpen) {
+    return true;
+  }
+  return USER_SECTION_PATHS.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
+  );
+}
+
 export function SiteHeaderUserMenu(props: SiteHeaderUserMenuProps): JSX.Element {
   const pathname = usePathname();
   const menuId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const displayName = userDisplayName(props.user);
+  const active = isUserSectionActive(pathname, open);
 
   const closeMenu = useCallback((): void => {
     setOpen(false);
@@ -78,11 +90,30 @@ export function SiteHeaderUserMenu(props: SiteHeaderUserMenuProps): JSX.Element 
 
   return (
     <div ref={rootRef} className="site-header-user-menu">
+      <svg width="0" height="0" className="sr-only" aria-hidden>
+        <defs>
+          <linearGradient
+            id="site-header-user-icon-gradient"
+            x1="0%"
+            y1="0%"
+            x2="100%"
+            y2="100%"
+          >
+            <stop offset="0%" stopColor="#6366f1" />
+            <stop offset="48%" stopColor="#ec4899" />
+            <stop offset="100%" stopColor="#0ea5e9" />
+          </linearGradient>
+        </defs>
+      </svg>
       <button
         type="button"
-        className={`site-header-user-menu__trigger${
-          props.mobile ? " site-header-user-menu__trigger--mobile" : ""
-        }`}
+        className={[
+          "site-header-user-menu__trigger",
+          props.mobile ? "site-header-user-menu__trigger--mobile" : "",
+          active ? "site-header-user-menu__trigger--active" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
         aria-expanded={open}
         aria-haspopup="menu"
         aria-controls={menuId}
@@ -91,7 +122,9 @@ export function SiteHeaderUserMenu(props: SiteHeaderUserMenuProps): JSX.Element 
         <span className="site-header-user-menu__greeting">
           Hi, {displayName}
         </span>
-        <FontAwesomeIcon icon={faUser} className="site-header-user-menu__icon" />
+        <span className="site-header-user-menu__icon-wrap" aria-hidden>
+          <FontAwesomeIcon icon={faUser} className="site-header-user-menu__icon" />
+        </span>
       </button>
 
       {open ? (

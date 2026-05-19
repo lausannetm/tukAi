@@ -44,6 +44,12 @@
     color-mix(in srgb, var(--brand-border-pink) 32%, white) 48%,
     color-mix(in srgb, var(--brand-border-sky) 38%, white) 100%
   );
+  --brand-gradient-icon: linear-gradient(
+    var(--brand-gradient-angle),
+    var(--brand-border-indigo) 0%,
+    var(--brand-border-pink) 48%,
+    var(--brand-border-sky) 100%
+  );
 }
 
 body {
@@ -123,12 +129,24 @@ a:hover {
   font-weight: 500;
   line-height: 1.25;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
-.site-header-user-menu__trigger:hover,
-.site-header-user-menu__trigger[aria-expanded="true"] {
+.site-header-user-menu__trigger:hover:not(.site-header-user-menu__trigger--active) {
   background-color: var(--surface-100);
+}
+
+.site-header-user-menu__trigger--active {
+  background: var(--brand-gradient-nav-active);
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.site-header-user-menu__trigger--active:hover {
+  background: var(--brand-gradient-nav-active-hover);
+  color: var(--text-color);
 }
 
 .site-header-user-menu__trigger--mobile {
@@ -145,11 +163,22 @@ a:hover {
   white-space: nowrap;
 }
 
-.site-header-user-menu__icon {
+.site-header-user-menu__icon-wrap {
+  display: inline-flex;
   flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.site-header-user-menu__icon {
   width: 0.9rem;
   height: 0.9rem;
-  color: var(--text-color-secondary);
+}
+
+.site-header-user-menu__icon path {
+  fill: url(#site-header-user-icon-gradient);
 }
 
 .site-header-user-menu__panel {
@@ -198,6 +227,7 @@ a:hover {
 
 .site-header-user-menu__item:hover {
   background-color: var(--surface-100);
+  text-decoration: none;
 }
 
 .site-header-user-menu__item--action {
