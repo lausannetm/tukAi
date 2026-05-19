@@ -59,8 +59,8 @@ export function SiteHeader(): JSX.Element {
   }, [menuOpen]);
 
   return (
-    <header className="surface-section border-bottom-1 surface-border sticky top-0 z-5 shadow-1">
-      <div className="flex align-items-center justify-content-between px-3 sm:px-4 py-3 max-w-screen-xl mx-auto">
+    <header className="bg-white surface-section border-bottom-1 surface-border sticky top-0 z-5 shadow-1">
+      <div className="bg-white flex align-items-center justify-content-between px-3 sm:px-4 py-3 max-w-screen-xl mx-auto">
         <Link
           href="/"
           className="flex align-items-center gap-2 no-underline text-color font-bold text-xl"
