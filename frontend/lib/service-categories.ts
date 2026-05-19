@@ -62,6 +62,10 @@ export const CATALOG_CATEGORIES: CatalogCategory[] = [
   { id: "fun", label: "Fun", imageUrl: localCategoryImage("fun") },
 ];
 
+/** Categories available when listing a new service (excludes “All”). */
+export const LISTABLE_SERVICE_CATEGORIES: CatalogCategory[] =
+  CATALOG_CATEGORIES.filter((category) => category.id !== "all");
+
 /** Category cards that use full artwork from `/public/images/categories/`. */
 export function isBrandedCategoryImage(imageUrl: string): boolean {
   return imageUrl.startsWith("/images/categories/");

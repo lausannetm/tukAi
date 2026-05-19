@@ -9,6 +9,23 @@ const ALLOWED_MIME = new Map<string, string>([
   ["image/gif", ".gif"],
 ]);
 
+const EXTENSION_TO_MIME = new Map<string, string>([
+  [".jpg", "image/jpeg"],
+  [".jpeg", "image/jpeg"],
+  [".png", "image/png"],
+  [".webp", "image/webp"],
+  [".gif", "image/gif"],
+]);
+
+function resolveUploadMimeType(file: File): string {
+  const fromHeader = file.type.trim().toLowerCase();
+  if (fromHeader && ALLOWED_MIME.has(fromHeader)) {
+    return fromHeader;
+  }
+  const ext = path.extname(file.name).toLowerCase();
+  return EXTENSION_TO_MIME.get(ext) ?? "";
+}
+
 const MAX_BYTES = 5 * 1024 * 1024;
 
 /** Shown when the listing owner did not upload a photo via POST /services/upload. */
@@ -73,14 +90,15 @@ export async function saveServiceImageFile(file: File): Promise<{
   image_url: string;
   filename: string;
 }> {
-  if (!ALLOWED_MIME.has(file.type)) {
+  const mimeType = resolveUploadMimeType(file);
+  if (!mimeType) {
     throw new Error("Image must be JPEG, PNG, WebP, or GIF.");
   }
   if (file.size <= 0 || file.size > MAX_BYTES) {
     throw new Error("Image must be between 1 byte and 5 MB.");
   }
 
-  const ext = ALLOWED_MIME.get(file.type) ?? ".bin";
+  const ext = ALLOWED_MIME.get(mimeType) ?? ".bin";
   const filename = `${randomUUID()}${ext}`;
   const dir = serviceUploadsDir();
   await mkdir(dir, { recursive: true });

@@ -10,7 +10,6 @@ export type CreateServicePayload = {
   latitude: number;
   longitude: number;
   imageUrl?: string;
-  rating?: number;
 };
 
 export function backendInternalOrigin(): string {
@@ -19,6 +18,15 @@ export function backendInternalOrigin(): string {
     return raw.replace(/\/$/, "");
   }
   return "http://127.0.0.1:3001";
+}
+
+/** Same-origin `/backend` proxy in the browser; direct internal URL on the server. */
+export function backendApiUrl(path: string): string {
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  if (typeof window !== "undefined") {
+    return `/backend${normalized}`;
+  }
+  return `${backendInternalOrigin()}${normalized}`;
 }
 
 export async function fetchServices(): Promise<ServiceDTO[]> {
@@ -57,7 +65,7 @@ export async function uploadServiceImage(file: File): Promise<{ image_url: strin
   const form = new FormData();
   form.append("image", file);
 
-  const response = await fetch("/backend/services/upload", {
+  const response = await fetch(backendApiUrl("/services/upload"), {
     method: "POST",
     body: form,
   });
@@ -90,8 +98,7 @@ export async function uploadServiceImage(file: File): Promise<{ image_url: strin
 export async function createService(
   payload: CreateServicePayload,
 ): Promise<ServiceDTO> {
-  const origin = backendInternalOrigin();
-  const response = await fetch(`${origin}/services`, {
+  const response = await fetch(backendApiUrl("/services"), {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -103,7 +110,6 @@ export async function createService(
       latitude: payload.latitude,
       longitude: payload.longitude,
       image_url: payload.imageUrl,
-      rating: payload.rating,
     }),
   });
 
@@ -133,8 +139,7 @@ export async function postOrder(payload: {
   serviceId: string;
   quantity: number;
 }): Promise<OrderDTO> {
-  const origin = backendInternalOrigin();
-  const response = await fetch(`${origin}/orders`, {
+  const response = await fetch(backendApiUrl("/orders"), {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
