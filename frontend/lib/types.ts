@@ -26,11 +26,25 @@ export type AiServiceSuggestResponse = {
   reason: string;
 };
 
+export type OrderServiceSummary = {
+  id: string;
+  name: string;
+  description: string;
+  price_cents: number;
+  location: string;
+  image_url: string;
+  provider_label: string | null;
+};
+
 export type OrderDTO = {
   id: string;
   user_id: string;
   service_id: string;
   status: string;
   quantity: number;
+  booking_date: string | null;
+  booking_time: string | null;
+  message_to_provider: string | null;
   created_at: string;
+  service?: OrderServiceSummary | null;
 };

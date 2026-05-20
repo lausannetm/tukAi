@@ -138,6 +138,10 @@ export async function postOrder(payload: {
   userId: string;
   serviceId: string;
   quantity: number;
+  status?: string;
+  bookingDate?: string;
+  bookingTime?: string;
+  messageToProvider?: string;
 }): Promise<OrderDTO> {
   const response = await fetch(backendApiUrl("/orders"), {
     method: "POST",
@@ -146,6 +150,10 @@ export async function postOrder(payload: {
       userId: payload.userId,
       serviceId: payload.serviceId,
       quantity: payload.quantity,
+      status: payload.status,
+      bookingDate: payload.bookingDate,
+      bookingTime: payload.bookingTime,
+      messageToProvider: payload.messageToProvider,
     }),
   });
 
@@ -167,5 +175,33 @@ export async function postOrder(payload: {
     throw new Error(message);
   }
 
-  return bodyUnknown as OrderDTO;
+  return normalizeOrderDto(bodyUnknown as OrderDTO);
+}
+
+function normalizeOrderDto(row: OrderDTO): OrderDTO {
+  const service = row.service;
+  return {
+    ...row,
+    booking_date: row.booking_date ?? null,
+    booking_time: row.booking_time ?? null,
+    message_to_provider: row.message_to_provider ?? null,
+    service: service
+      ? {
+          ...service,
+          image_url: resolveServiceImageUrl(service.image_url),
+        }
+      : service ?? null,
+  };
+}
+
+export async function fetchUserOrders(userId: string): Promise<OrderDTO[]> {
+  const q = new URLSearchParams({ userId });
+  const response = await fetch(backendApiUrl(`/orders?${q.toString()}`));
+
+  if (!response.ok) {
+    throw new Error(`Failed to load orders (${response.status})`);
+  }
+
+  const rows = (await response.json()) as OrderDTO[];
+  return rows.map(normalizeOrderDto);
 }

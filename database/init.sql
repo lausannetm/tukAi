@@ -42,6 +42,9 @@ CREATE TABLE orders (
     service_id      UUID NOT NULL REFERENCES services (id) ON DELETE RESTRICT,
     status          TEXT NOT NULL DEFAULT 'pending',
     quantity        INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+    booking_date    DATE,
+    booking_time    TEXT,
+    message_to_provider TEXT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

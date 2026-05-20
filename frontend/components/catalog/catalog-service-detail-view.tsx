@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button } from "primereact/button";
 import { Message } from "primereact/message";
 import { useEffect, useState } from "react";
+import { ServiceBookingDialog } from "@/components/catalog/service-booking-dialog";
 import { readStoredUser } from "@/lib/auth-storage";
 import {
   formatServicePrice,
@@ -25,8 +26,8 @@ export function CatalogServiceDetailView(props: {
 }): JSX.Element {
   const category = getCategoryBySlug(props.categoryId);
   const ratingLabel = formatServiceRating(props.service.rating);
-  const orderHref = `/order?serviceId=${encodeURIComponent(props.service.id)}`;
   const [viewerUserId, setViewerUserId] = useState<string | null>(null);
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   useEffect(() => {
     const user = readStoredUser();
@@ -89,9 +90,19 @@ export function CatalogServiceDetailView(props: {
                   className="w-full border-round-lg catalog-service-detail__own-listing"
                 />
               ) : (
-                <Link href={orderHref} className="no-underline catalog-service-detail__cta-link">
-                  <Button label="Place an order" className="catalog-service-detail__cta" />
-                </Link>
+                <>
+                  <Button
+                    label="Book this service"
+                    className="catalog-service-detail__cta"
+                    onClick={() => setBookingOpen(true)}
+                  />
+                  <ServiceBookingDialog
+                    visible={bookingOpen}
+                    onHide={() => setBookingOpen(false)}
+                    service={props.service}
+                    categoryId={props.categoryId}
+                  />
+                </>
               )}
             </div>
           </article>

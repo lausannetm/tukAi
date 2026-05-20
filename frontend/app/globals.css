@@ -868,3 +868,92 @@ a:hover {
   object-fit: contain;
   background: var(--surface-100);
 }
+
+.service-booking-dialog__slot {
+  min-width: 4.25rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 0.5rem;
+  background: var(--surface-card);
+  color: var(--text-color);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.service-booking-dialog__slot:hover:not(:disabled) {
+  border-color: var(--primary-color);
+}
+
+.service-booking-dialog__slot--selected {
+  border-color: var(--primary-color);
+  background: var(--primary-50, #eff6ff);
+  color: var(--primary-700, #1d4ed8);
+}
+
+.service-booking-dialog__slot:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.service-booking-dialog .p-dialog-content {
+  padding-top: 0.5rem;
+}
+
+.payment-confirmation__summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.payment-confirmation__row {
+  display: grid;
+  grid-template-columns: minmax(0, 7rem) minmax(0, 1fr);
+  gap: 0.5rem 1rem;
+  align-items: start;
+}
+
+.payment-confirmation__row dt {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-color-secondary);
+}
+
+.payment-confirmation__row dd {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--text-color);
+}
+
+.payment-confirmation__row--message dd {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.used-services-card {
+  display: flex;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.used-services-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.used-services-card:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.used-services-card__message {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
