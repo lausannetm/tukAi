@@ -833,11 +833,73 @@ a:hover {
   margin: 0;
 }
 
+.catalog-service-detail__cta.p-button {
+  background: var(--brand-gradient-nav-active) !important;
+  color: var(--text-color);
+  border-color: transparent;
+}
+
+.catalog-service-detail__cta.p-button:enabled:hover {
+background: var(--brand-gradient-nav-active-hover) !important;
+color: var(--text-color);
+}
+
+.p-autocomplete-dropdown, .p-button {
+  background: var(--brand-gradient-nav-active) !important;
+  color: var(--text-color);
+  border-color: transparent;
+}
+
+.p-autocomplete-dropdown, .p-button:enabled:hover {
+  background: var(--brand-gradient-nav-active-hover) !important;
+  color: var(--text-color);
+  }
+
+.catalog-service-detail__cta.p-button:focus-visible {
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 4px color-mix(in srgb, var(--brand-border-indigo) 55%, transparent);
+}
+
+.my-services-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 28rem;
+  margin-inline: auto;
+}
+
+.my-services-panel__cta.p-button {
+  width: 100%;
+  max-width: 100%;
+  justify-content: center;
+}
+
+.my-services-list {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
 .my-services-card {
   display: flex;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
+}
+
+.my-services-card__body {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.my-services-card__title {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .my-services-card:hover {
@@ -867,6 +929,52 @@ a:hover {
 .create-service-form__preview--default {
   object-fit: contain;
   background: var(--surface-100);
+}
+
+.service-booking-dialog__calendar .p-calendar {
+  display: inline-flex;
+  width: auto;
+}
+
+.service-booking-dialog__calendar .p-datepicker {
+  min-width: 0;
+  width: auto;
+  padding: 0.375rem;
+}
+
+.service-booking-dialog__calendar .p-datepicker .p-datepicker-header {
+  padding: 0.375rem;
+}
+
+.service-booking-dialog__calendar .p-datepicker .p-datepicker-header .p-datepicker-prev,
+.service-booking-dialog__calendar .p-datepicker .p-datepicker-header .p-datepicker-next {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.service-booking-dialog__calendar .p-datepicker .p-datepicker-header .p-datepicker-title {
+  line-height: 1.5rem;
+}
+
+.service-booking-dialog__calendar .p-datepicker .p-datepicker-header .p-datepicker-title .p-datepicker-year,
+.service-booking-dialog__calendar .p-datepicker .p-datepicker-header .p-datepicker-title .p-datepicker-month {
+  padding: 0.25rem;
+}
+
+.service-booking-dialog__calendar .p-datepicker table {
+  font-size: 0.8125rem;
+  margin: 0.25rem 0;
+}
+
+.service-booking-dialog__calendar .p-datepicker table th,
+.service-booking-dialog__calendar .p-datepicker table td {
+  padding: 0.125rem;
+}
+
+.service-booking-dialog__calendar .p-datepicker table th > span,
+.service-booking-dialog__calendar .p-datepicker table td > span {
+  width: 1.75rem;
+  height: 1.75rem;
 }
 
 .service-booking-dialog__slot {
@@ -903,6 +1011,19 @@ a:hover {
   padding-top: 0.5rem;
 }
 
+.button-secondary.p-button {
+  background: var(--surface-200) !important;
+  color: var(--text-color) !important;
+  border-color: var(--surface-300) !important;
+}
+
+.button-secondary.p-button:enabled:hover,
+.button-secondary.p-button:enabled:active {
+  background: var(--surface-300) !important;
+  color: var(--text-color) !important;
+  border-color: var(--surface-400) !important;
+}
+
 .payment-confirmation__summary {
   display: flex;
   flex-direction: column;
@@ -934,11 +1055,45 @@ a:hover {
   line-height: 1.5;
 }
 
+.used-services-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 28rem;
+  margin-inline: auto;
+}
+
+.used-services-panel__cta.p-button {
+  width: 100%;
+  max-width: 100%;
+  justify-content: center;
+}
+
+.used-services-list {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
 .used-services-card {
   display: flex;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
+}
+
+.used-services-card__body {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.used-services-card__title {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .used-services-card:hover {

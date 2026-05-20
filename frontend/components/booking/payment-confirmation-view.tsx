@@ -137,7 +137,15 @@ export function PaymentConfirmationView(): JSX.Element {
         <Message severity="error" text={error} className="w-full border-round-lg mb-3" />
       ) : null}
 
-      <div className="flex flex-column sm:flex-row gap-2">
+      <div className="flex flex-column sm:flex-row justify-content-between">
+        <Button
+          type="button"
+          label="Back"
+          severity="secondary"
+          disabled={pending}
+          onClick={() => router.push(categoryCatalogPath(draft.categoryId))}
+          className="button-secondary"
+        />
         <Button
           type="button"
           label={pending ? "Confirming…" : "Confirm"}
@@ -145,14 +153,6 @@ export function PaymentConfirmationView(): JSX.Element {
           loading={pending}
           disabled={pending}
           onClick={handleConfirm}
-        />
-        <Button
-          type="button"
-          label="Back"
-          severity="secondary"
-          outlined
-          disabled={pending}
-          onClick={() => router.push(categoryCatalogPath(draft.categoryId))}
         />
       </div>
     </div>

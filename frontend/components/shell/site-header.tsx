@@ -109,7 +109,9 @@ export function SiteHeader(): JSX.Element {
             <>
               <Link
                 href="/login"
-                className={siteHeaderNavLinkClass(isActivePath(pathname, "/login"))}
+                className={siteHeaderNavLinkClass(
+                  isActivePath(pathname, "/login"),
+                )}
               >
                 Log in
               </Link>

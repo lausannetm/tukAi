@@ -58,32 +58,31 @@ export function MyServicesView(): JSX.Element {
 
   if (error) {
     return (
-      <Message severity="warn" text={error} className="w-full border-round-lg" />
+      <Message
+        severity="warn"
+        text={error}
+        className="w-full border-round-lg"
+      />
     );
   }
 
   if (services.length === 0) {
     return (
-      <div className="flex flex-column gap-3">
-        <Message
-          severity="info"
-          text="You have not listed any services yet."
-          className="w-full border-round-lg"
-        />
-        <Link href="/list-service" className="text-primary font-medium no-underline">
-          List a service
-        </Link>
-      </div>
+      <Message
+        severity="info"
+        text="You have not listed any services yet."
+        className="w-full border-round-lg"
+      />
     );
   }
 
   return (
-    <ul className="list-none m-0 p-0 flex flex-column gap-3">
+    <ul className="my-services-list list-none m-0 p-0 flex flex-column gap-3 w-full">
       {services.map((service) => (
-        <li key={service.id}>
+        <li key={service.id} className="w-full">
           <Link
             href={serviceDetailCatalogPath(service)}
-            className="my-services-card surface-card border-1 surface-border border-round-lg p-3 flex gap-3 no-underline text-inherit"
+            className="my-services-card surface-card border-1 surface-border border-round-lg p-3 flex gap-3 no-underline text-inherit w-full"
             aria-label={`View ${service.name}`}
           >
             <img
@@ -96,8 +95,10 @@ export function MyServicesView(): JSX.Element {
               loading="lazy"
               decoding="async"
             />
-            <div className="min-w-0">
-              <h2 className="mt-0 mb-1 text-lg font-semibold text-color">{service.name}</h2>
+            <div className="my-services-card__body min-w-0">
+              <h2 className="my-services-card__title mt-0 mb-1 text-lg font-semibold text-color">
+                {service.name}
+              </h2>
               <p className="m-0 mb-1 text-sm text-color-secondary">
                 {serviceDisplayLocation(service)}
               </p>

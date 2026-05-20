@@ -88,7 +88,7 @@ export function ServiceBookingDialog(props: {
 
   return (
     <Dialog
-      header={`Book: ${props.service.name}`}
+      header={props.service.name}
       visible={props.visible}
       onHide={props.onHide}
       className="service-booking-dialog"
@@ -105,27 +105,18 @@ export function ServiceBookingDialog(props: {
               text="Log in to book this service."
               className="w-full border-round-lg"
             />
-            <Link href="/login" className="text-primary font-medium no-underline text-sm">
-              Go to login
-            </Link>
           </div>
         ) : null}
 
-        <p className="m-0 text-sm text-color-secondary line-height-3">
-          Message for <span className="font-medium text-color">{providerLabel}</span>{" "}
-          about your booking.
-        </p>
-
         <div className="service-booking-dialog__calendar">
-          <label className="block text-sm font-medium text-color mb-2">Date</label>
           <Calendar
             value={selectedDate}
             onChange={(e) => setSelectedDate((e.value as Date | null) ?? null)}
-            inline
+            touchUI={false}
             minDate={today}
             maxDate={maxDate}
             disabled={loggedInUserId === null}
-            className="w-full"
+            className="service-booking-dialog__calendar-picker"
           />
           {dateIso ? (
             <p className="m-0 mt-2 text-sm text-color-secondary">
@@ -185,13 +176,13 @@ export function ServiceBookingDialog(props: {
           />
         </div>
 
-        <div className="flex flex-column sm:flex-row gap-2 justify-content-end">
+        <div className="flex flex-column sm:flex-row gap-2 justify-content-between">
           <Button
             type="button"
             label="Cancel"
             severity="secondary"
-            outlined
             onClick={props.onHide}
+            className="button-secondary"
           />
           <Button
             type="button"

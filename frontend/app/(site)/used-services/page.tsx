@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BookAnotherServiceButton } from "@/components/account/book-another-service-button";
 import { UsedServicesView } from "@/components/account/used-services-view";
 
 export const metadata: Metadata = {
@@ -16,8 +17,12 @@ export default function UsedServicesPage(): JSX.Element {
         <p className="text-color-secondary m-0 line-height-3">
           Services you have booked through TukAI.
         </p>
+        
       </header>
-      <UsedServicesView />
+      <div className="used-services-panel flex flex-column gap-3">
+        <UsedServicesView />
+        <BookAnotherServiceButton />
+      </div>
     </div>
   );
 }

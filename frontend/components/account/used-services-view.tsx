@@ -93,21 +93,16 @@ export function UsedServicesView(): JSX.Element {
 
   if (orders.length === 0) {
     return (
-      <div className="flex flex-column gap-3">
-        <Message
-          severity="info"
-          text="You have not booked any services yet."
-          className="w-full border-round-lg"
-        />
-        <Link href="/catalog" className="text-primary font-medium no-underline">
-          Book a service
-        </Link>
-      </div>
+      <Message
+        severity="info"
+        text="You have not booked any services yet."
+        className="w-full border-round-lg"
+      />
     );
   }
 
   return (
-    <ul className="list-none m-0 p-0 flex flex-column gap-3">
+    <ul className="used-services-list list-none m-0 p-0 flex flex-column gap-3 w-full">
       {orders.map((order) => {
         const summary = order.service;
         if (!summary) {
@@ -116,10 +111,10 @@ export function UsedServicesView(): JSX.Element {
         const service = orderServiceToServiceDto(order, summary);
 
         return (
-          <li key={order.id}>
+          <li key={order.id} className="w-full">
             <Link
               href={serviceDetailCatalogPath(service)}
-              className="used-services-card surface-card border-1 surface-border border-round-lg p-3 flex gap-3 no-underline text-inherit"
+              className="used-services-card surface-card border-1 surface-border border-round-lg p-3 flex gap-3 no-underline text-inherit w-full"
               aria-label={`View ${service.name}`}
             >
               <img
@@ -132,8 +127,10 @@ export function UsedServicesView(): JSX.Element {
                 loading="lazy"
                 decoding="async"
               />
-              <div className="min-w-0 flex-grow-1">
-                <h2 className="mt-0 mb-1 text-lg font-semibold text-color">{service.name}</h2>
+              <div className="used-services-card__body min-w-0">
+                <h2 className="used-services-card__title mt-0 mb-1 text-lg font-semibold text-color">
+                  {service.name}
+                </h2>
                 <p className="m-0 mb-1 text-sm text-color-secondary">
                   {serviceDisplayLocation(service)}
                 </p>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ListAServiceButton } from "@/components/account/list-a-service-button";
 import { MyServicesView } from "@/components/account/my-services-view";
 
 export const metadata: Metadata = {
@@ -17,7 +18,10 @@ export default function MyServicesPage(): JSX.Element {
           Services you offer on the platform.
         </p>
       </header>
-      <MyServicesView />
+      <div className="my-services-panel flex flex-column gap-3">
+        <MyServicesView />
+        <ListAServiceButton />
+      </div>
     </div>
   );
 }
