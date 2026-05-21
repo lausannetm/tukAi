@@ -112,34 +112,23 @@ CREATE TRIGGER trg_reviews_no_self_review
   EXECUTE FUNCTION forbid_review_own_listing();
 
 -- Demo data (fixed UUIDs so the web UI and curl examples stay stable across resets)
+
+-- Dev admin (password: admin). Email pre-verified so login works without registration.
+INSERT INTO users (id, email, full_name, password_hash, email_verified_at)
+VALUES (
+    'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'::uuid,
+    'admin@test.com',
+    'Admin A.',
+    '$2b$10$dDORgx./1sZP3WQP3AVl7umgbhpWgGFmyetlySQ6D6JuMsPVJnlAq',
+    now()
+);
+
 INSERT INTO users (id, email, full_name)
 VALUES (
     '11111111-1111-4111-8111-111111111111'::uuid,
     'demo@example.com',
     'Demo User'
 );
-
-INSERT INTO users (id, email, full_name)
-VALUES (
-    'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,
-    'api.vendor@example.com',
-    'API Vendor Inc.'
-);
-
-INSERT INTO services (id, provider_id, name, description, price_cents, location, rating, image_url, latitude, longitude)
-VALUES
-    ('22222222-2222-4222-8222-222222222221'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Vision API', 'Image classification bundle. Category: it', 4999, 'Sofia, Bulgaria', 4.85, '/images/services/default.png', 42.6977, 23.3219),
-    ('22222222-2222-4222-8222-222222222222'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Text API', 'LLM completions per token. Category: it', 1999, 'Sofia, Bulgaria', NULL, '/images/services/default.png', 42.6745, 23.3542),
-    ('22222222-2222-4222-8222-222222222223'::uuid, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Speech API', 'Transcription pipeline. Category: it', 3499, 'Sofia, Bulgaria', NULL, '/images/services/it-speechapi.webp', 42.7156, 23.2791);
-
-INSERT INTO reviews (user_id, service_id, rating, comment)
-VALUES
-    ('11111111-1111-4111-8111-111111111111'::uuid, '22222222-2222-4222-8222-222222222221'::uuid, 5, 'Excellent accuracy'),
-    ('11111111-1111-4111-8111-111111111111'::uuid, '22222222-2222-4222-8222-222222222221'::uuid, 5, 'Fast inference'),
-    ('11111111-1111-4111-8111-111111111111'::uuid, '22222222-2222-4222-8222-222222222222'::uuid, 4, 'Solid completions'),
-    ('11111111-1111-4111-8111-111111111111'::uuid, '22222222-2222-4222-8222-222222222222'::uuid, 4, 'Good value'),
-    ('11111111-1111-4111-8111-111111111111'::uuid, '22222222-2222-4222-8222-222222222223'::uuid, 3, 'Works for short clips'),
-    ('11111111-1111-4111-8111-111111111111'::uuid, '22222222-2222-4222-8222-222222222223'::uuid, 4, 'Clear transcripts');
 
 -- Reviewer accounts (for catalog services below)
 INSERT INTO users (id, email, full_name)

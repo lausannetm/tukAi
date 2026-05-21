@@ -26,6 +26,12 @@ import { DEFAULT_SERVICE_IMAGE_PATH } from "@/lib/service-display";
 
 const MIN_NAME_LENGTH = 5;
 const MIN_DESCRIPTION_LENGTH = 50;
+const SERVICE_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+const SERVICE_IMAGE_SIZE_ERROR = "Image must be between 1 byte and 5 MB.";
+
+function isServiceImageSizeValid(file: File): boolean {
+  return file.size > 0 && file.size <= SERVICE_IMAGE_MAX_BYTES;
+}
 
 type CategoryOption = { label: string; value: ServiceCategoryId };
 
@@ -52,9 +58,18 @@ function buildDescriptionWithCategory(
   return `${body}\n\nCategory: ${categoryId}`;
 }
 
+function RequiredFieldMark(): JSX.Element {
+  return (
+    <span className="create-service-form__required" aria-hidden="true">
+      *
+    </span>
+  );
+}
+
 export function CreateServiceForm(): JSX.Element {
   const router = useRouter();
   const toastRef = useRef<Toast>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -76,13 +91,17 @@ export function CreateServiceForm(): JSX.Element {
 
   useEffect(() => {
     setToastAppendTo(document.body);
-  }, []);
-
-  useEffect(() => {
     const user = readStoredUser();
     if (user) {
       setUserId(user.id);
+      return;
     }
+    toastRef.current?.show({
+      severity: "warn",
+      summary: "Sign in required",
+      detail: "Log in to list a service under your account.",
+      life: 5000,
+    });
   }, []);
 
   useEffect(() => {
@@ -149,7 +168,11 @@ export function CreateServiceForm(): JSX.Element {
     setLocationSuggestions([]);
     setCategoryId(null);
     setPriceEur(null);
+    setImageFile(null);
     setFieldErrors({});
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
@@ -162,6 +185,10 @@ export function CreateServiceForm(): JSX.Element {
     }
 
     if (priceEur === null || !categoryId || !resolvedLocation) {
+      return;
+    }
+
+    if (!userId.trim()) {
       return;
     }
 
@@ -192,7 +219,18 @@ export function CreateServiceForm(): JSX.Element {
         resetFormFields();
         router.refresh();
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Could not list service.");
+        const message =
+          e instanceof Error ? e.message : "Could not list service.";
+        if (message === SERVICE_IMAGE_SIZE_ERROR) {
+          toastRef.current?.show({
+            severity: "error",
+            summary: "Invalid image",
+            detail: SERVICE_IMAGE_SIZE_ERROR,
+            life: 5000,
+          });
+          return;
+        }
+        setError(message);
       }
     });
   };
@@ -206,34 +244,56 @@ export function CreateServiceForm(): JSX.Element {
   return (
     <form className="create-service-form flex flex-column gap-4" onSubmit={handleSubmit}>
       <Toast ref={toastRef} position="top-center" appendTo={toastAppendTo} />
-      {!userId ? (
-        <Message
-          severity="warn"
-          text="Log in to list a service under your account."
-          className="w-full"
-        />
-      ) : null}
 
       {error ? <Message severity="error" text={error} className="w-full" /> : null}
       <div className="create-service-form__image-field flex flex-column gap-2">
-        <label htmlFor="service-image" className="font-semibold text-color">
+        <span id="service-image-label" className="font-semibold text-color">
           Service photo{" "}
           <span className="text-color-secondary font-normal">(optional)</span>
-        </label>
+        </span>
         <p className="text-color-secondary text-sm m-0">
           If you skip a photo, the default service image will be shown in the
           catalog.
         </p>
         <input
+          ref={fileInputRef}
           id="service-image"
           type="file"
           accept="image/jpeg,image/png,image/webp,image/gif"
           className="create-service-form__file-input"
           onChange={(e) => {
             const file = e.target.files?.[0] ?? null;
+            if (!file) {
+              setImageFile(null);
+              return;
+            }
+            if (!isServiceImageSizeValid(file)) {
+              e.target.value = "";
+              toastRef.current?.show({
+                severity: "error",
+                summary: "Invalid image",
+                detail: SERVICE_IMAGE_SIZE_ERROR,
+                life: 5000,
+              });
+              return;
+            }
             setImageFile(file);
           }}
+          tabIndex={-1}
+          aria-labelledby="service-image-label"
         />
+        <Button
+          type="button"
+          label={imageFile ? "Change photo" : "Choose photo"}
+          icon="pi pi-image"
+          outlined
+          className="align-self-start"
+          aria-controls="service-image"
+          onClick={() => fileInputRef.current?.click()}
+        />
+        {imageFile ? (
+          <p className="text-color-secondary text-sm m-0">{imageFile.name}</p>
+        ) : null}
         {imagePreviewUrl ? (
           <img
             src={imagePreviewUrl}
@@ -248,6 +308,7 @@ export function CreateServiceForm(): JSX.Element {
           />
         )}
       </div>
+      
 
       <div className="field flex flex-column gap-1">
         <FloatLabel>
@@ -262,12 +323,12 @@ export function CreateServiceForm(): JSX.Element {
             }}
             className={`w-full${showNameError ? " p-invalid" : ""}`}
             aria-invalid={showNameError}
+            aria-required
           />
-          <label htmlFor="service-name">Name</label>
+          <label htmlFor="service-name">
+            Name <RequiredFieldMark />
+          </label>
         </FloatLabel>
-        <small className="text-color-secondary m-0">
-          At least {MIN_NAME_LENGTH} characters.
-        </small>
         {showNameError ? (
           <small className="p-error m-0">{fieldErrors.name}</small>
         ) : null}
@@ -287,12 +348,12 @@ export function CreateServiceForm(): JSX.Element {
             className={`w-full${showDescriptionError ? " p-invalid" : ""}`}
             rows={4}
             aria-invalid={showDescriptionError}
+            aria-required
           />
-          <label htmlFor="service-description">Description</label>
+          <label htmlFor="service-description">
+            Description <RequiredFieldMark />
+          </label>
         </FloatLabel>
-        <small className="text-color-secondary m-0">
-          {description.trim().length}/{MIN_DESCRIPTION_LENGTH} characters minimum.
-        </small>
         {showDescriptionError ? (
           <small className="p-error m-0">{fieldErrors.description}</small>
         ) : null}
@@ -327,12 +388,12 @@ export function CreateServiceForm(): JSX.Element {
             className={`w-full${showLocationError ? " p-invalid" : ""}`}
             inputClassName="w-full"
             aria-invalid={showLocationError}
+            aria-required
           />
-          <label htmlFor="service-location">Location</label>
+          <label htmlFor="service-location">
+            Location <RequiredFieldMark />
+          </label>
         </FloatLabel>
-        <small className="text-color-secondary m-0">
-          Start typing a city (e.g. Sof) and pick a suggestion.
-        </small>
         {showLocationError ? (
           <small className="p-error m-0">{fieldErrors.location}</small>
         ) : null}
@@ -355,8 +416,11 @@ export function CreateServiceForm(): JSX.Element {
             placeholder="Select a category"
             className={`w-full${showCategoryError ? " p-invalid" : ""}`}
             aria-invalid={showCategoryError}
+            aria-required
           />
-          <label htmlFor="service-category">Category</label>
+          <label htmlFor="service-category">
+            Category <RequiredFieldMark />
+          </label>
         </FloatLabel>
         {showCategoryError ? (
           <small className="p-error m-0">{fieldErrors.category}</small>
@@ -383,8 +447,11 @@ export function CreateServiceForm(): JSX.Element {
             className={`w-full${showPriceError ? " p-invalid" : ""}`}
             inputClassName="w-full"
             aria-invalid={showPriceError}
+            aria-required
           />
-          <label htmlFor="service-price">Price (EUR)</label>
+          <label htmlFor="service-price">
+            Price (EUR) <RequiredFieldMark />
+          </label>
         </FloatLabel>
         {showPriceError ? (
           <small className="p-error m-0">{fieldErrors.price}</small>
@@ -395,7 +462,7 @@ export function CreateServiceForm(): JSX.Element {
         type="submit"
         label={pending ? "Publishing…" : "Publish service"}
         disabled={pending || !canSubmit}
-        className="align-self-start"
+        className="align-self-end"
       />
     </form>
   );

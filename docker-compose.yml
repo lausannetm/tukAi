@@ -9,6 +9,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./database/seed_catalog_marketplace_services.sql:/docker-entrypoint-initdb.d/02-catalog-services.sql:ro
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:

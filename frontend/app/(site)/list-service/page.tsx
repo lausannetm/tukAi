@@ -14,7 +14,7 @@ export default function ListServicePage(): JSX.Element {
           List a service
         </h1>
         <p className="text-color-secondary m-0 line-height-3">
-          Add a photo of your offer, or leave it blank to use the default service
+          Add a photo of your service, or leave it blank to use the default service
           image in the catalog.
         </p>
       </header>
