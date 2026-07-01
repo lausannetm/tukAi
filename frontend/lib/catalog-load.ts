@@ -27,7 +27,7 @@ export async function loadCatalogContext(): Promise<CatalogLoadResult> {
 
 export function filterServicesByQuery(
   services: ServiceDTO[],
-  query: string | undefined
+  query: string | undefined,
 ): ServiceDTO[] {
   const q = query?.trim().toLowerCase();
   if (!q) {
