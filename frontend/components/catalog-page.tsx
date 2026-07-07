@@ -3,13 +3,57 @@
 import Link from "next/link";
 import { Card } from "primereact/card";
 import { Message } from "primereact/message";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ServiceDTO } from "@/lib/types";
 import type { SubmitOrderFn } from "@/lib/submit-order-fn";
 import { OrderForm } from "@/components/order-form";
 import { ServicesTable } from "@/components/services-table";
 
 const AI_SUGGESTION_STORAGE_KEY = "aiSearchSuggestion";
+
+type AiSuggestionStorage = {
+  matchIds?: string[];
+  items?: Array<{ serviceId?: string; reason?: string }>;
+  serviceId?: string;
+  reason?: string;
+};
+
+function readAiSuggestionMessage(
+  suggestedServiceIds: string[],
+): string | null {
+  if (suggestedServiceIds.length === 0) {
+    return null;
+  }
+  try {
+    const raw =
+      typeof window !== "undefined"
+        ? window.sessionStorage.getItem(AI_SUGGESTION_STORAGE_KEY)
+        : null;
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as AiSuggestionStorage;
+    const matchIds =
+      parsed.matchIds ??
+      (parsed.serviceId ? [parsed.serviceId] : suggestedServiceIds);
+    const idsMatch =
+      matchIds.length === suggestedServiceIds.length &&
+      matchIds.every((id, index) => id === suggestedServiceIds[index]);
+    if (!idsMatch) {
+      return null;
+    }
+    if (Array.isArray(parsed.items) && parsed.items.length > 0) {
+      if (parsed.items.length === 1) {
+        const reason = parsed.items[0]?.reason;
+        return typeof reason === "string" ? reason : null;
+      }
+      return `Found ${parsed.items.length} services matching your search.`;
+    }
+    return typeof parsed.reason === "string" ? parsed.reason : null;
+  } catch {
+    return null;
+  }
+}
 
 export function CatalogPage(props: {
   services: ServiceDTO[];
@@ -20,39 +64,40 @@ export function CatalogPage(props: {
   submitOrderForm: SubmitOrderFn;
   showServices?: boolean;
   showOrderForm?: boolean;
-  suggestedServiceId?: string;
-  highlightServiceId?: string;
+  suggestedServiceIds?: string[];
+  highlightServiceIds?: string[];
   initialServiceId?: string;
 }): JSX.Element {
   const showServices = props.showServices ?? true;
   const showOrderForm = props.showOrderForm ?? true;
   const [aiReason, setAiReason] = useState<string | null>(null);
+  const suggestedServiceIds = props.suggestedServiceIds ?? [];
+  const highlightServiceIds =
+    props.highlightServiceIds ?? suggestedServiceIds;
+
+  const servicesForTable = useMemo(() => {
+    if (suggestedServiceIds.length === 0) {
+      return props.services;
+    }
+    const byId = new Map(props.services.map((service) => [service.id, service]));
+    const suggested = suggestedServiceIds.flatMap((id) => {
+      const service = byId.get(id);
+      return service ? [service] : [];
+    });
+    return suggested.length > 0 ? suggested : props.services;
+  }, [props.services, suggestedServiceIds]);
 
   useEffect(() => {
-    if (!props.suggestedServiceId) {
+    if (suggestedServiceIds.length === 0) {
       setAiReason(null);
       return;
     }
-    try {
-      const raw =
-        typeof window !== "undefined"
-          ? window.sessionStorage.getItem(AI_SUGGESTION_STORAGE_KEY)
-          : null;
-      if (!raw) {
-        return;
-      }
-      const parsed = JSON.parse(raw) as { serviceId?: string; reason?: string };
-      if (
-        parsed.serviceId === props.suggestedServiceId &&
-        typeof parsed.reason === "string"
-      ) {
-        setAiReason(parsed.reason);
-        window.sessionStorage.removeItem(AI_SUGGESTION_STORAGE_KEY);
-      }
-    } catch {
-      /* ignore malformed storage */
+    const reason = readAiSuggestionMessage(suggestedServiceIds);
+    if (reason) {
+      setAiReason(reason);
+      window.sessionStorage.removeItem(AI_SUGGESTION_STORAGE_KEY);
     }
-  }, [props.suggestedServiceId]);
+  }, [suggestedServiceIds]);
 
   return (
     <div className="flex-grow-1 surface-ground">
@@ -85,7 +130,7 @@ export function CatalogPage(props: {
             />
           ) : null}
 
-          {aiReason && props.suggestedServiceId ? (
+          {aiReason && suggestedServiceIds.length > 0 ? (
             <Message
               severity="success"
               text={aiReason}
@@ -99,8 +144,8 @@ export function CatalogPage(props: {
               className="shadow-3 mb-3 md:mb-4 border-round-lg"
             >
               <ServicesTable
-                services={props.services}
-                highlightServiceId={props.highlightServiceId}
+                services={servicesForTable}
+                highlightServiceIds={highlightServiceIds}
               />
             </Card>
           ) : null}

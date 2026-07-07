@@ -6,13 +6,16 @@ import {
 } from "@/lib/mock-service-suggest";
 import {
   normalizeServicePick,
+  sortServicePicks,
   suggestServiceWithOpenAI,
   type CatalogItemForAi,
+  type ServicesPickResponse,
 } from "@/lib/openai-service-suggest";
 import {
   queryEnrichedServices,
   serviceJsonFromEnrichedRow,
 } from "@/lib/services-queries";
+import { inferServiceCategory } from "@/lib/service-categories";
 
 type SuggestRequestBody = {
   query?: unknown;
@@ -33,6 +36,39 @@ function parseOptionalNumber(value: unknown): number | null {
 
 function isValidLatLng(lat: number, lng: number): boolean {
   return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+}
+
+function buildCatalogItems(
+  rows: Awaited<ReturnType<typeof queryEnrichedServices>>,
+  userLat: number | null,
+  userLng: number | null,
+): CatalogItemForAi[] {
+  return rows.map((row) => {
+    const avgRating =
+      row.avg_rating !== null && row.avg_rating !== ""
+        ? Number.parseFloat(row.avg_rating)
+        : null;
+    const reviewCount = Number.parseInt(row.review_count, 10);
+    const lat = Number(row.latitude);
+    const lng = Number(row.longitude);
+    let distance_km: number | null = null;
+    if (userLat !== null && userLng !== null) {
+      distance_km =
+        Math.round(haversineKm(userLat, userLng, lat, lng) * 10) / 10;
+    }
+    return {
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      category: inferServiceCategory({
+        name: row.name,
+        description: row.description,
+      }),
+      avg_rating: Number.isFinite(avgRating ?? NaN) ? avgRating : null,
+      review_count: Number.isFinite(reviewCount) ? reviewCount : 0,
+      distance_km,
+    };
+  });
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
@@ -63,97 +99,64 @@ export async function POST(req: Request): Promise<NextResponse> {
     const rows = await queryEnrichedServices();
     if (rows.length === 0) {
       return NextResponse.json(
-        { service: null, reason: "No services are available yet." },
+        { services: [], reason: "No services are available yet." },
         { status: 200 }
       );
     }
 
+    const items = buildCatalogItems(rows, userLat, userLng);
+    const validIds = new Set(items.map((item) => item.id));
+
+    let pick: ServicesPickResponse;
     if (isOpenAiMockSuggestEnabled()) {
-      const pick = pickServiceMock({
+      pick = pickServiceMock({
         query: queryText,
         userLat,
         userLng,
         rows,
       });
-      if (pick.service_id === null) {
-        return NextResponse.json({ service: null, reason: pick.reason });
+    } else {
+      const apiKey = process.env.OPENAI_API_KEY?.trim();
+      if (!apiKey) {
+        return NextResponse.json(
+          {
+            error:
+              "OPENAI_API_KEY is not set. For a zero-cost demo set OPENAI_MOCK_SUGGEST=1 (project root .env for Docker Compose). Local next dev uses mock automatically when the key is empty.",
+          },
+          { status: 503 }
+        );
       }
-      const row = rows.find((r) => r.id === pick.service_id);
+
+      const rawPick = await suggestServiceWithOpenAI({
+        apiKey,
+        userQuery: queryText,
+        items,
+      });
+      pick = normalizeServicePick(rawPick, validIds);
+    }
+
+    const sorted = sortServicePicks(pick.services, items);
+    const services = sorted.flatMap((entry) => {
+      const row = rows.find((candidate) => candidate.id === entry.service_id);
       if (!row) {
-        return NextResponse.json({
-          service: null,
-          reason: pick.reason,
-        });
+        return [];
       }
-      return NextResponse.json({
-        service: serviceJsonFromEnrichedRow(row),
-        reason: pick.reason,
-      });
-    }
-
-    const apiKey = process.env.OPENAI_API_KEY?.trim();
-    if (!apiKey) {
-      return NextResponse.json(
+      return [
         {
-          error:
-            "OPENAI_API_KEY is not set. For a zero-cost demo set OPENAI_MOCK_SUGGEST=1 (project root .env for Docker Compose). Local next dev uses mock automatically when the key is empty.",
+          service: serviceJsonFromEnrichedRow(row),
+          reason: entry.reason,
         },
-        { status: 503 }
-      );
-    }
-
-    const items: CatalogItemForAi[] = rows.map((row) => {
-      const avgRating =
-        row.avg_rating !== null && row.avg_rating !== ""
-          ? Number.parseFloat(row.avg_rating)
-          : null;
-      const reviewCount = Number.parseInt(row.review_count, 10);
-      const lat = Number(row.latitude);
-      const lng = Number(row.longitude);
-      let distance_km: number | null = null;
-      if (userLat !== null && userLng !== null) {
-        distance_km =
-          Math.round(haversineKm(userLat, userLng, lat, lng) * 10) / 10;
-      }
-      return {
-        id: row.id,
-        name: row.name,
-        description: row.description,
-        avg_rating: Number.isFinite(avgRating ?? NaN) ? avgRating : null,
-        review_count: Number.isFinite(reviewCount) ? reviewCount : 0,
-        distance_km,
-      };
+      ];
     });
 
-    const validIds = new Set(items.map((i) => i.id));
-    const rawPick = await suggestServiceWithOpenAI({
-      apiKey,
-      userQuery: queryText,
-      userLatitude: userLat,
-      userLongitude: userLng,
-      items,
-    });
-    const pick = normalizeServicePick(rawPick, validIds);
-
-    if (pick.service_id === null) {
+    if (services.length === 0) {
       return NextResponse.json({
-        service: null,
-        reason: pick.reason,
+        services: [],
+        reason: "No matching services were found in the catalog.",
       });
     }
 
-    const row = rows.find((r) => r.id === pick.service_id);
-    if (!row) {
-      return NextResponse.json({
-        service: null,
-        reason: pick.reason,
-      });
-    }
-
-    return NextResponse.json({
-      service: serviceJsonFromEnrichedRow(row),
-      reason: pick.reason,
-    });
+    return NextResponse.json({ services });
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "AI suggestion failed.";

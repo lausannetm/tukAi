@@ -33,6 +33,7 @@ services:
       SMTP_FROM: ${SMTP_FROM:-noreply@localhost}
       # Set in .env (see .env.example). Required for POST /services/suggest (AI hero search).
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
       # Set to 1 for a zero-OpenAI-cost demo (local heuristic instead of ChatGPT).
       OPENAI_MOCK_SUGGEST: ${OPENAI_MOCK_SUGGEST:-}
       SERVICE_UPLOADS_DIR: /app/uploads/services

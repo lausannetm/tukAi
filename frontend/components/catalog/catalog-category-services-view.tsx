@@ -13,46 +13,93 @@ import {
 
 const AI_SUGGESTION_STORAGE_KEY = "aiSearchSuggestion";
 
+type AiSuggestionStorage = {
+  matchIds?: string[];
+  items?: Array<{ serviceId?: string; reason?: string }>;
+  serviceId?: string;
+  reason?: string;
+};
+
+function readAiSuggestionMessage(
+  suggestedServiceIds: string[],
+): string | null {
+  if (suggestedServiceIds.length === 0) {
+    return null;
+  }
+  try {
+    const raw =
+      typeof window !== "undefined"
+        ? window.sessionStorage.getItem(AI_SUGGESTION_STORAGE_KEY)
+        : null;
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as AiSuggestionStorage;
+    const matchIds =
+      parsed.matchIds ??
+      (parsed.serviceId ? [parsed.serviceId] : suggestedServiceIds);
+    const idsMatch =
+      matchIds.length === suggestedServiceIds.length &&
+      matchIds.every((id, index) => id === suggestedServiceIds[index]);
+    if (!idsMatch) {
+      return null;
+    }
+    if (Array.isArray(parsed.items) && parsed.items.length > 0) {
+      if (parsed.items.length === 1) {
+        const reason = parsed.items[0]?.reason;
+        return typeof reason === "string" ? reason : null;
+      }
+      return `Found ${parsed.items.length} services matching your search.`;
+    }
+    return typeof parsed.reason === "string" ? parsed.reason : null;
+  } catch {
+    return null;
+  }
+}
+
 export function CatalogCategoryServicesView(props: {
   categoryId: ServiceCategoryId;
   services: ServiceDTO[];
   loadError: string | null;
-  suggestedServiceId?: string;
-  highlightServiceId?: string;
+  suggestedServiceIds?: string[];
+  highlightServiceIds?: string[];
 }): JSX.Element {
   const category = getCategoryBySlug(props.categoryId);
   const [aiReason, setAiReason] = useState<string | null>(null);
+  const suggestedServiceIds = props.suggestedServiceIds ?? [];
+  const highlightServiceIds =
+    props.highlightServiceIds ?? suggestedServiceIds;
 
-  const filteredServices = useMemo(
-    () => filterServicesByCategory(props.services, props.categoryId),
-    [props.services, props.categoryId],
-  );
+  const filteredServices = useMemo(() => {
+    const categoryServices = filterServicesByCategory(
+      props.services,
+      props.categoryId,
+    );
+    if (suggestedServiceIds.length === 0) {
+      return categoryServices;
+    }
+    const byId = new Map(categoryServices.map((service) => [service.id, service]));
+    const suggested = suggestedServiceIds.flatMap((id) => {
+      const service = byId.get(id);
+      return service ? [service] : [];
+    });
+    if (suggested.length > 0) {
+      return suggested;
+    }
+    return categoryServices;
+  }, [props.services, props.categoryId, suggestedServiceIds]);
 
   useEffect(() => {
-    if (!props.suggestedServiceId) {
+    if (suggestedServiceIds.length === 0) {
       setAiReason(null);
       return;
     }
-    try {
-      const raw =
-        typeof window !== "undefined"
-          ? window.sessionStorage.getItem(AI_SUGGESTION_STORAGE_KEY)
-          : null;
-      if (!raw) {
-        return;
-      }
-      const parsed = JSON.parse(raw) as { serviceId?: string; reason?: string };
-      if (
-        parsed.serviceId === props.suggestedServiceId &&
-        typeof parsed.reason === "string"
-      ) {
-        setAiReason(parsed.reason);
-        window.sessionStorage.removeItem(AI_SUGGESTION_STORAGE_KEY);
-      }
-    } catch {
-      /* ignore malformed storage */
+    const reason = readAiSuggestionMessage(suggestedServiceIds);
+    if (reason) {
+      setAiReason(reason);
+      window.sessionStorage.removeItem(AI_SUGGESTION_STORAGE_KEY);
     }
-  }, [props.suggestedServiceId]);
+  }, [suggestedServiceIds]);
 
   return (
     <div className="flex-grow-1 surface-ground">
@@ -78,7 +125,7 @@ export function CatalogCategoryServicesView(props: {
             />
           ) : null}
 
-          {aiReason && props.suggestedServiceId ? (
+          {aiReason && suggestedServiceIds.length > 0 ? (
             <Message
               severity="success"
               text={aiReason}
@@ -90,7 +137,7 @@ export function CatalogCategoryServicesView(props: {
             <ServiceCardGrid
               categoryId={props.categoryId}
               services={filteredServices}
-              highlightServiceId={props.highlightServiceId}
+              highlightServiceIds={highlightServiceIds}
             />
           </section>
         </div>

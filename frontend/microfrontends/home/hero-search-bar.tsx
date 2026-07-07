@@ -7,7 +7,15 @@ import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import type { AiServiceSuggestResponse } from "@/lib/types";
+import {
+  categoryCatalogPath,
+  inferServiceCategory,
+  type ServiceCategoryId,
+} from "@/lib/service-categories";
+import type {
+  AiServiceSuggestMatch,
+  AiServiceSuggestResponse,
+} from "@/lib/types";
 
 const AI_SUGGESTION_STORAGE_KEY = "aiSearchSuggestion";
 
@@ -16,26 +24,50 @@ function readSuggestResponse(data: unknown): AiServiceSuggestResponse | null {
     return null;
   }
   const o = data as Record<string, unknown>;
-  if (!("reason" in o) || typeof o.reason !== "string") {
+  if (!("services" in o) || !Array.isArray(o.services)) {
     return null;
   }
-  if (!("service" in o)) {
-    return null;
-  }
-  const service = o.service;
-  if (service !== null) {
-    if (typeof service !== "object") {
-      return null;
+  const services: AiServiceSuggestMatch[] = [];
+  for (const entry of o.services) {
+    if (typeof entry !== "object" || entry === null) {
+      continue;
+    }
+    const item = entry as Record<string, unknown>;
+    if (typeof item.reason !== "string") {
+      continue;
+    }
+    const service = item.service;
+    if (typeof service !== "object" || service === null) {
+      continue;
     }
     const row = service as Record<string, unknown>;
     if (typeof row.id !== "string") {
-      return null;
+      continue;
     }
+    services.push({
+      service: service as AiServiceSuggestMatch["service"],
+      reason: item.reason,
+    });
   }
-  return {
-    service: service as AiServiceSuggestResponse["service"],
-    reason: o.reason,
-  };
+  const reason =
+    "reason" in o && typeof o.reason === "string" ? o.reason : undefined;
+  return { services, reason };
+}
+
+function catalogPathForAiSuggestions(
+  matches: AiServiceSuggestMatch[],
+): string {
+  const ids = matches.map((match) => match.service.id).join(",");
+  const categories = new Set(
+    matches
+      .map((match) => inferServiceCategory(match.service))
+      .filter((category): category is Exclude<ServiceCategoryId, "all"> =>
+        Boolean(category),
+      ),
+  );
+  const categoryId =
+    categories.size === 1 ? [...categories][0]! : ("all" as const);
+  return `${categoryCatalogPath(categoryId)}?suggested=${encodeURIComponent(ids)}`;
 }
 
 async function getBrowserCoordinates(): Promise<{
@@ -137,21 +169,22 @@ export function HeroSearchBar(): JSX.Element {
         return;
       }
 
-      if (parsed.service) {
+      if (parsed.services.length > 0) {
         try {
           sessionStorage.setItem(
             AI_SUGGESTION_STORAGE_KEY,
             JSON.stringify({
-              serviceId: parsed.service.id,
-              reason: parsed.reason,
+              matchIds: parsed.services.map((match) => match.service.id),
+              items: parsed.services.map((match) => ({
+                serviceId: match.service.id,
+                reason: match.reason,
+              })),
             })
           );
         } catch {
           /* private mode or quota */
         }
-        router.push(
-          `${href}${href.includes("?") ? "&" : "?"}suggested=${encodeURIComponent(parsed.service.id)}`
-        );
+        router.push(catalogPathForAiSuggestions(parsed.services));
         return;
       }
 
@@ -159,7 +192,7 @@ export function HeroSearchBar(): JSX.Element {
         severity: "info",
         text:
           parsed.reason ||
-          "No single best match was found — open the catalog to compare services.",
+          "No matching services were found — open the catalog to compare options.",
       });
       router.push(href);
     } finally {
@@ -208,7 +241,7 @@ export function HeroSearchBar(): JSX.Element {
           </IconField>
           <p className="text-color-secondary text-sm m-0 mt-2 line-height-3">
             Search uses ChatGPT with your browser location (if you allow it)
-            to recommend a highly rated nearby service when possible.
+            to recommend nearby services when possible.
           </p>
           <div className="flex gap-2 mt-3 flex-wrap">
             <Button

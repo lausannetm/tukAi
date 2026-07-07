@@ -7,8 +7,9 @@ import type { ServiceDTO } from "@/lib/types";
 export function ServiceCardGrid(props: {
   categoryId: ServiceCategoryId;
   services: ServiceDTO[];
-  highlightServiceId?: string;
+  highlightServiceIds?: string[];
 }): JSX.Element {
+  const highlightSet = new Set(props.highlightServiceIds ?? []);
   if (props.services.length === 0) {
     return (
       <p className="catalog-service-grid__empty text-color-secondary m-0">
@@ -24,10 +25,7 @@ export function ServiceCardGrid(props: {
           <ServiceCard
             service={service}
             href={serviceCatalogPath(props.categoryId, service.id)}
-            highlighted={
-              props.highlightServiceId !== undefined &&
-              service.id === props.highlightServiceId
-            }
+            highlighted={highlightSet.has(service.id)}
           />
         </div>
       ))}

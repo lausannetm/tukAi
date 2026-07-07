@@ -21,9 +21,14 @@ export type ServiceDTO = {
   category?: string | null;
 };
 
-export type AiServiceSuggestResponse = {
-  service: ServiceDTO | null;
+export type AiServiceSuggestMatch = {
+  service: ServiceDTO;
   reason: string;
+};
+
+export type AiServiceSuggestResponse = {
+  services: AiServiceSuggestMatch[];
+  reason?: string;
 };
 
 export type OrderServiceSummary = {

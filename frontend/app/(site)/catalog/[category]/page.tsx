@@ -24,6 +24,13 @@ export async function generateMetadata(
   };
 }
 
+function parseSuggestedIds(raw: string): string[] {
+  return raw
+    .split(",")
+    .map((id) => id.trim())
+    .filter((id) => id.length > 0);
+}
+
 export default async function CatalogCategoryRoute(
   props: CatalogCategoryRouteProps,
 ): Promise<JSX.Element> {
@@ -35,17 +42,17 @@ export default async function CatalogCategoryRoute(
   const categoryId: ServiceCategoryId = categorySlug;
   const sp = (await props.searchParams) ?? {};
   const q = sp.q;
-  const suggestedRaw = sp.suggested?.trim() ?? "";
+  const suggestedIds = parseSuggestedIds(sp.suggested?.trim() ?? "");
 
   const ctx = await loadCatalogContext();
   const filtered = filterServicesByQuery(ctx.services, q);
-  const suggestedRow =
-    suggestedRaw.length > 0
-      ? ctx.services.find((s) => s.id === suggestedRaw)
-      : undefined;
+  const suggestedRows = suggestedIds.flatMap((id) => {
+    const row = ctx.services.find((service) => service.id === id);
+    return row ? [row] : [];
+  });
   const servicesForTable =
-    suggestedRow && !filtered.some((s) => s.id === suggestedRow.id)
-      ? [...filtered, suggestedRow]
+    suggestedRows.length > 0
+      ? suggestedRows
       : filtered;
 
   return (
@@ -53,8 +60,8 @@ export default async function CatalogCategoryRoute(
       categoryId={categoryId}
       services={servicesForTable}
       loadError={ctx.loadError}
-      suggestedServiceId={suggestedRow?.id}
-      highlightServiceId={suggestedRow?.id}
+      suggestedServiceIds={suggestedRows.map((row) => row.id)}
+      highlightServiceIds={suggestedRows.map((row) => row.id)}
     />
   );
 }

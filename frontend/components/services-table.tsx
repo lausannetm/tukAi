@@ -25,8 +25,9 @@ function ratingBody(row: ServiceDTO): string {
 
 export function ServicesTable(props: {
   services: ServiceDTO[];
-  highlightServiceId?: string;
+  highlightServiceIds?: string[];
 }): JSX.Element {
+  const highlightSet = new Set(props.highlightServiceIds ?? []);
   return (
     <DataTable
       value={props.services}
@@ -36,9 +37,7 @@ export function ServicesTable(props: {
       emptyMessage="No services available."
       size="small"
       rowClassName={(row: ServiceDTO): string | undefined =>
-        props.highlightServiceId && row.id === props.highlightServiceId
-          ? "surface-highlight"
-          : undefined
+        highlightSet.has(row.id) ? "surface-highlight" : undefined
       }
     >
       <Column field="name" header="Name" sortable />

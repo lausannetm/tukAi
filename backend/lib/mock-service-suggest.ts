@@ -1,5 +1,12 @@
 import { haversineKm } from "@/lib/haversine";
+import {
+  sortServicePicks,
+  type CatalogItemForAi,
+  type ServicePick,
+  type ServicesPickResponse,
+} from "@/lib/openai-service-suggest";
 import type { EnrichedServiceRow } from "@/lib/services-queries";
+import { inferServiceCategory } from "@/lib/service-categories";
 
 /**
  * When true, `/services/suggest` skips OpenAI and picks locally (zero API spend).
@@ -24,8 +31,100 @@ export function isOpenAiMockSuggestEnabled(): boolean {
   return false;
 }
 
+const BROAD_CATEGORY_PATTERNS: Array<{
+  category: Exclude<ReturnType<typeof inferServiceCategory>, null>;
+  pattern: RegExp;
+}> = [
+  {
+    category: "it",
+    pattern:
+      /\b(it|computer|computers|tech|laptop|pc|компют|информатик|техник)\b/i,
+  },
+  {
+    category: "beauty",
+    pattern:
+      /\b(beauty|beautiful|spa|wellness|relax|pamper|massage|manicure|pedicure|facial|skincare|salon|yoga|красота|поглез|салон|спа|маникюр)\b/i,
+  },
+  {
+    category: "renovation",
+    pattern:
+      /\b(renovation|repair|handyman|construction|plumber|electrician|майстор|ремонт|строител)\b/i,
+  },
+  {
+    category: "photography",
+    pattern: /\b(photo|photograph|photography|фотограф|снимк|сватб)\b/i,
+  },
+  {
+    category: "catering",
+    pattern: /\b(cater|catering|banquet|food service|кетъринг|банкет)\b/i,
+  },
+  {
+    category: "chefs",
+    pattern: /\b(chef|cook|personal chef|готвач|шеф)\b/i,
+  },
+  {
+    category: "fun",
+    pattern: /\b(entertain|party|event|dj|fun|забавлен|парти)\b/i,
+  },
+];
+
+function catalogItemsFromRows(
+  rows: EnrichedServiceRow[],
+  userLat: number | null,
+  userLng: number | null,
+): CatalogItemForAi[] {
+  return rows.map((row) => {
+    const avgRating =
+      row.avg_rating !== null && row.avg_rating !== ""
+        ? Number.parseFloat(row.avg_rating)
+        : null;
+    const reviewCount = Number.parseInt(row.review_count, 10);
+    const lat = Number(row.latitude);
+    const lng = Number(row.longitude);
+    let distance_km: number | null = null;
+    if (userLat !== null && userLng !== null) {
+      distance_km =
+        Math.round(haversineKm(userLat, userLng, lat, lng) * 10) / 10;
+    }
+    return {
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      category: inferServiceCategory({
+        name: row.name,
+        description: row.description,
+      }),
+      avg_rating: Number.isFinite(avgRating ?? NaN) ? avgRating : null,
+      review_count: Number.isFinite(reviewCount) ? reviewCount : 0,
+      distance_km,
+    };
+  });
+}
+
+function inferBroadCategory(query: string): string | null {
+  for (const entry of BROAD_CATEGORY_PATTERNS) {
+    if (entry.pattern.test(query)) {
+      return entry.category;
+    }
+  }
+  if (query.includes("me time") || query.includes("feel good")) {
+    return "beauty";
+  }
+  return null;
+}
+
+function pickReason(mode: "broad" | "specific" | "fallback"): string {
+  if (mode === "broad") {
+    return "Demo / mock mode (no OpenAI): matched a broad category request.";
+  }
+  if (mode === "specific") {
+    return "Demo / mock mode (no OpenAI): matched using name, description, and intent.";
+  }
+  return "Demo / mock mode (no OpenAI): showing the best local matches instead.";
+}
+
 /**
- * Heuristic match: substring in name/description, token overlap, avg rating, distance.
+ * Heuristic match: category-wide picks, token overlap, then local distance/rating sort.
  * Same response contract as the LLM path so the UI behaves identically.
  */
 export function pickServiceMock(params: {
@@ -33,12 +132,30 @@ export function pickServiceMock(params: {
   userLat: number | null;
   userLng: number | null;
   rows: EnrichedServiceRow[];
-}): { service_id: string | null; reason: string } {
+}): ServicesPickResponse {
   if (params.rows.length === 0) {
-    return { service_id: null, reason: "No services in the catalog." };
+    return { services: [] };
   }
 
   const q = params.query.trim().toLowerCase();
+  const items = catalogItemsFromRows(
+    params.rows,
+    params.userLat,
+    params.userLng,
+  );
+  const broadCategory = inferBroadCategory(q);
+  if (broadCategory) {
+    const picks: ServicePick[] = items
+      .filter((item) => item.category === broadCategory)
+      .map((item) => ({
+        service_id: item.id,
+        reason: pickReason("broad"),
+      }));
+    if (picks.length > 0) {
+      return { services: sortServicePicks(picks, items) };
+    }
+  }
+
   const words = q
     .split(/[\s/.,;:!?\-_+]+/)
     .map((w) => w.trim().toLowerCase())
@@ -65,52 +182,35 @@ export function pickServiceMock(params: {
       }
     }
 
-    const avgRaw =
-      row.avg_rating !== null && row.avg_rating !== ""
-        ? Number.parseFloat(row.avg_rating)
-        : 0;
-    const avg = Number.isFinite(avgRaw) ? avgRaw : 0;
-    score += avg * 12;
-
-    const lat = Number(row.latitude);
-    const lng = Number(row.longitude);
-    if (params.userLat !== null && params.userLng !== null) {
-      const d = haversineKm(params.userLat, params.userLng, lat, lng);
-      score += Math.max(0, 40 - Math.min(d, 40));
+    const beautyQuery =
+      /\b(beauty|beautiful|spa|wellness|relax|pamper|massage|manicure|pedicure|facial|skincare|salon|yoga)\b/.test(
+        q,
+      ) || q.includes("me time") || q.includes("feel good");
+    const beautyService =
+      descLower.includes("beauty") ||
+      descLower.includes("wellness") ||
+      descLower.includes("spa") ||
+      nameLower.includes("spa") ||
+      nameLower.includes("beauty");
+    if (beautyQuery && beautyService) {
+      score += 90;
     }
 
     return { row, score };
   });
 
-  scored.sort((a, b) => b.score - a.score);
-  const best = scored[0];
-  if (!best) {
-    return { service_id: null, reason: "No suggestion available." };
+  const matches = scored.filter((entry) => entry.score > 0);
+  if (matches.length > 0) {
+    const picks: ServicePick[] = matches.map((entry) => ({
+      service_id: entry.row.id,
+      reason: pickReason("specific"),
+    }));
+    return { services: sortServicePicks(picks, items) };
   }
 
-  if (best.score <= 0) {
-    const byRating = [...params.rows].sort((a, b) => {
-      const ra =
-        a.avg_rating !== null && a.avg_rating !== ""
-          ? Number.parseFloat(a.avg_rating)
-          : 0;
-      const rb =
-        b.avg_rating !== null && b.avg_rating !== ""
-          ? Number.parseFloat(b.avg_rating)
-          : 0;
-      return rb - ra;
-    });
-    const row = byRating[0];
-    return {
-      service_id: row.id,
-      reason:
-        "Demo / mock mode (no OpenAI): no text overlap with your search—showing the highest-rated service instead.",
-    };
-  }
-
-  return {
-    service_id: best.row.id,
-    reason:
-      "Demo / mock mode (no OpenAI): matched using name, description, average rating, and distance.",
+  const fallbackPick: ServicePick = {
+    service_id: params.rows[0]!.id,
+    reason: pickReason("fallback"),
   };
+  return { services: sortServicePicks([fallbackPick], items) };
 }
